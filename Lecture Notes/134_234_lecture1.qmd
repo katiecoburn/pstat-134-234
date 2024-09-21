@@ -5,7 +5,7 @@ format:
   revealjs:
     slide-number: c
     theme: night
-editor: visual
+editor: source
 ---
 
 ## Introduction
