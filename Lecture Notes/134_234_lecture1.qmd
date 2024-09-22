@@ -49,17 +49,19 @@ When you click the **Render** button a document will be generated that includes:
 
 -   Week 3: When the API Doesn't Exist: Intro to Web Scraping
 
--   Week 4: Data Cleaning and Tidying
+-   Week 4: Data Cleaning
 
--   Week 5: Effective Data Visualization in R and Python
+-   Week 5: Data Manipulation
 
--   Week 6: Case Study 1: Natural Language Processing
+-   Week 6: Effective Data Visualization
 
--   Week 7: Case Study 2: Recommender Systems
+-   Week 7: Case Study 1: Natural Language Processing
 
--   Week 8: Case Study 3: Image Classification
+-   Week 8: Case Study 2: Recommender Systems
 
--   Week 9: Case Study 4:
+-   Week 9: Case Study 3: Image Classification
+
+-   Week 10: 
 
 ## Syllabus
 

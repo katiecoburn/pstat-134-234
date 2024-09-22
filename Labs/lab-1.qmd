@@ -1,0 +1,139 @@
+---
+title: "Lab 1"
+author: "PSTAT 134/234"
+format: html
+editor: source
+---
+
+## Lab 1
+
+This course, Statistical Data Science, is written using a combination of R and Python via Quarto. To learn more about Quarto, see <https://quarto.org>. Throughout the course, you will be provided with code in both R and Python, often either doing the same task in both languages or switching back and forth between languages.
+
+Overall, you can do work for this course in the framework with which you are most comfortable. If you are very familiar with Jupyter notebooks, you can work in those; they now have the functionality to access R kernels, allowing you to incorporate R code as well.
+
+I personally **recommend working in RStudio**. I have found it to be the most convenient and accessible framework, allowing me to seamlessly transition between notebooks to scripts and between R and Python programming, even providing a framework for Git and GitHub connection.
+
+## Installing R
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+library(reticulate)
+
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+## Installing Python
+
+You can install Python in several different ways. Even if you plan on working with Python primarily through R or RStudio (as I usually do), you need to have an active installation of Python on your computer to do so. Although many people interact with Python through the terminal (particularly when they use Mac OS or Linux), you do not necessarily have to if you are unfamiliar with the terminal.
+
+The two main distributions of Python I recommend are:
+
+-   [Miniconda](http://conda.pydata.org/miniconda.html): Minimal installer; a small bootstrap version of Anaconda that includes `conda` (a cross-platform package manager), Python, the packages they both depend on, and a small number of other useful packages. This is sufficient for most people.
+
+-   [Anaconda](https://www.continuum.io/downloads): Full-scale installer; comes with Python, `conda`, and a large suite of other pre-installed packages for scientific computing. Large size and will likely use several gigabytes of disk space.
+
+Follow the appropriate link to download an installer of Python, then follow the on-screen instructions to complete the installation. Make sure to download and install **Python 3.0 or later**.
+
+Next, open RStudio. The package we will use to interface with Python is [reticulate](https://rstudio.github.io/reticulate/index.html). You should install it using `install.packages()` and call it with `library()`. After completing initial setup, you can insert Python code chunks into Quarto or Markdown documents the same way you insert R chunks, and run code within those chunks using the same keyboard shortcuts. Running code in a Python chunk will cause RStudio to switch to the `reticulate` environment automatically. Running code in an R chunk subsequently will cause RStudio to close the `reticulate` environment.
+
+Once you have Python downloaded and `reticulate` set up, you can begin using it within RStudio.
+
+Open this file, `"lab-1.qmd"`, in RStudio and look at the following code chunk. Uncomment the line (delete the `#`) and run the chunk. This is the syntax you use to install Python packages from within R (the equivalent to the `conda install` terminal prompt). This chunk will most likely take a few minutes to run. If you already have these packages installed, this code will **update** your package installations.
+
+Note that, using `reticulate`, **both Python and R packages are installed using R**. Python packages are installed with `py_install()`, R packages with `install_packages()`.
+
+```{r}
+# py_install(c("pandas", "numpy", "scikit-learn",
+#              "matplotlib", "seaborn", "jupyter"))
+```
+
+To use a Python package, similar to `library()` in R, we write `import`. For example, to load the `numpy` and `scikit-learn` packages:
+
+```{python}
+import numpy as np
+import sklearn as sk
+```
+
+It is not required to add the `as np` or `as sk`; you can choose to simply write `import numpy`. However, doing so will mean that any time you use a `numpy` function, you will have to write out the full name of the package. `np` is a prefix, a sort of shorthand, for the package name. Most commonly-used Python packages have traditional prefixes; you'll see them as they come up throughout the course.
+
+Also, note that `scikit-learn` is called `sklearn` within Python. The dash `-` is a special character and you will encounter an error if you try to import `scikit-learn` rather than `sklearn`.
+
+Our textbook uses `IPython` rather than `reticulate` through RStudio. If you prefer, you can use `IPython` instead. However, **all material for this course is written by me, using `reticulate`, Anaconda, RStudio, and Quarto, with a combination of R and Python code chunks.**
+
+To verify that Python is set up correctly, try running the following code chunk:
+
+```{python}
+def say_hello(name):
+    print('Hello, {name}.'.format(name=name))
+
+# Try replacing YOUR NAME HERE with your own name:
+say_hello("YOUR NAME HERE")
+```
+
+## Our First Case Study
+
+The following
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+data("starwars")
+starwars <- starwars %>% 
+  select(name, height, species, gender) %>% 
+  drop_na()
+summary(starwars$height); sd(starwars$height)
+starwars_masc <- starwars %>% 
+  filter(gender == "masculine")
+starwars_fem <- starwars %>% 
+  filter(gender != "masculine")
+```
+
+```{python}
+mascheights = r.starwars_masc['height']
+femheights = r.starwars_fem['height']
+
+print("Mean height: ", mascheights.mean())
+print("Standard deviation: ", mascheights.std())
+print("Minimum height: ", mascheights.min())
+print("Maximum height: ", mascheights.max())
+```
+
+```{python}
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.set_style("whitegrid")
+plt.hist(mascheights)
+plt.title('Height Distribution of Masculine Star Wars Characters')
+plt.xlabel('Height (cm)')
+plt.ylabel('Count')
+```
+
+```{python}
+sns.kdeplot(mascheights, color = "orange")
+sns.kdeplot(femheights, color = "black")
+plt.title('Height Distribution of Star Wars Characters by Gender')
+plt.xlabel('Height (cm)')
+plt.ylabel('Density')
+plt.legend(['Masculine', 'Feminine'])
+```
+
+```{r}
+starwars %>%
+  ggplot(aes(x = height, color = gender)) +
+  geom_density() +
+  scale_color_manual(values=c("black", "orange")) +
+  ggtitle("Height Distribution of Star Wars Characters by Gender") +
+  xlab("Height (cm)") +
+  ylab("Density")
+```
