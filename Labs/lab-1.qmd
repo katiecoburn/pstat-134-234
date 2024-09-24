@@ -7,7 +7,7 @@ editor: source
 
 ## Lab 1
 
-This course, Statistical Data Science, is written using a combination of R and Python via Quarto. To learn more about Quarto, see <https://quarto.org>. Throughout the course, you will be provided with code in both R and Python, often either doing the same task in both languages or switching back and forth between languages.
+This course, Statistical Data Science, is written using a combination of R and Python via Quarto. To learn more about Quarto, see <https://quarto.org>. Throughout the course, you will be provided with code in both R and Python, often either doing the same task in both languages or switching back and forth between languages. Certain tasks are easier to do in Python, while others are easier to do in R. 
 
 Overall, you can do work for this course in the framework with which you are most comfortable. If you are very familiar with Jupyter notebooks, you can work in those; they now have the functionality to access R kernels, allowing you to incorporate R code as well.
 
@@ -68,7 +68,7 @@ It is not required to add the `as np` or `as sk`; you can choose to simply write
 
 Also, note that `scikit-learn` is called `sklearn` within Python. The dash `-` is a special character and you will encounter an error if you try to import `scikit-learn` rather than `sklearn`.
 
-Our textbook uses `IPython` rather than `reticulate` through RStudio. If you prefer, you can use `IPython` instead. However, **all material for this course is written by me, using `reticulate`, Anaconda, RStudio, and Quarto, with a combination of R and Python code chunks.**
+Our textbook uses `IPython` rather than `reticulate` through RStudio. If you prefer, you can use `IPython` instead. However, **all material for this course is created by me, using `reticulate`, Anaconda, RStudio, and Quarto, with a combination of R and Python code chunks.**
 
 To verify that Python is set up correctly, try running the following code chunk:
 

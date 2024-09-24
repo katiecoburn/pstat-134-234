@@ -53,16 +53,14 @@ knitr::opts_chunk$set(echo = TRUE)
 \begin{center}
 \begin{tabular}{ll}
 \textsc{Instructor:} &Dr. Katie Coburn (\href{mailto:katie\_m\_coburn@ucsb.edu}{\texttt{katie\_m\_coburn@ucsb.edu}}) \\
-\textsc{Teaching Assistants:} &Moya Xiong (\href{mailto:moyaxiong@ucsb.edu}{\texttt{moyaxiong@ucsb.edu}})\\
-    &John O'Brien (\href{mailto:johnobrien@ucsb.edu}{\texttt{johnobrien@ucsb.edu}}) \\
-    &Cosmin Borsa (\href{mailto:cosmin\_borsa@ucsb.edu}{\texttt{cosmin\_borsa@ucsb.edu}}) \\
-\textsc{Lectures:} &TR 3:30 - 4:45 pm NH 1006 \\
+\textsc{Teaching Assistants:} &Mengye Liu (\href{mailto:mengye@ucsb.edu}{\texttt{mengye@ucsb.edu}})\\
+    &Lihao Xiao (\href{mailto:lihao@ucsb.edu}{\texttt{lihao@ucsb.edu}}) \\
+\textsc{Lectures:} &TR 3:30 - 4:45 pm CHEM 1171 \\
 \textsc{Sections:}
-&M 12:00 - 12:50 pm PHELP 1525 \textsc{John} \\
-&M 1:00 - 1:50 pm PHELP 1525 \textsc{John} \\
-&M 2:00 - 2:50 pm PHELP 1525 \textsc{Moya} \\
-&M 3:00 - 3:50 pm PHELP 1525 \textsc{Moya} \\
-&M 4:00 - 4:50 pm PHELP 1525 \textsc{Cosmin} \\
+&W 10:00 - 10:50 am PHELP 1525 \textsc{Liu} \\
+&W 11:00 - 11:50 am PHELP 1525 \textsc{Liu} \\
+&W 12:00 - 12:50 pm PHELP 1525 \textsc{Xiao} \\
+&W 1:00 - 1:50 pm PHELP 1525 \textsc{Xiao} \\
 \end{tabular}
 \end{center}
 
@@ -73,70 +71,87 @@ knitr::opts_chunk$set(echo = TRUE)
 
 \vskip6pt\noindent \textsc{This course} is taught at two levels, one aimed at undergraduates (134 level) and one at graduate students (234 level). Lectures are given at a level intended to be accessible and relevant to all students in the course. Students taking the course at the 234 level will be assigned \textbf{additional homework questions}. The final project assignment is the same for both levels.
 
-\subsection*{Learning Outcomes}
-Upon completion of this course, students should be able to:
-\begin{enumerate}
-    \item \textsc{Explain} the common statistical learning techniques conceptually and characterize some of
-them mathematically;
-    \item \textsc{Describe and discuss} the pros and cons of the common statistical learning methods;
-    \item \textsc{Use R}, the \textit{tidyverse}, and \textit{tidymodels} effectively for exploratory data analysis, model fitting, and visualization.
-\end{enumerate}
+\subsection*{Attendance}
+\textsc{Lectures} and lab sections will be conducted in person only. We will not record lectures or labs. You are strongly encouraged to attend \textbf{all} lectures and lab sections; choosing not to attend will result in your missing the (potentially very important) content that was presented or discussed.
+
+\vskip6pt\noindent If you choose not to attend a lecture or section, you are still expected to complete the assignments and readings. If you are unable to attend for any \textbf{university-sanctioned reason}, please inform the instructor and your TA(s) as soon as possible.
 
 \subsection*{Format}
-\textsc{Lectures} and sections will be provided \textbf{in person only}. You are expected to attend every lecture and section. 
+\textsc{Lectures} and sections will be provided \textbf{in person only}. You are expected to attend every lecture and section. Lecture slides will be posted on Canvas before the corresponding class. The class will progress according to a weekly schedule (provided below). Both lecture periods each week will consist of slides that cover related concepts, sometimes including live coding to demonstrate how to apply the concepts. 
 
-\vskip6pt\noindent Any lecture slides will be posted on Canvas before the corresponding class. The class will progress according to a weekly schedule (provided below). Both lecture periods each week will consist of slides that cover related concepts, sometimes including live coding to demonstrate how to apply the concepts. 
+\vskip6pt\noindent Section each week will be dedicated to completing an R- and Python-based lab. Section attendance is recorded and is \textbf{very strongly} recommended, since doing so will enable you to learn and practice your coding skills in an environment where you can easily obtain help from the TA(s) and your peers.
 
-\vskip6pt\noindent Section each week will be dedicated to completing an R-based lab. Section attendance is not formally required but is \textbf{very strongly} recommended, since doing so will enable you to learn and practice your R skills in an environment where you can easily obtain help from the TA(s) and your peers.
-
-\vskip6pt\noindent Should you need to switch sections, please ask the TA of the section you want to switch to if there is room for you to attend. If the TA allows, you can then begin attending the new section while remaining officially enrolled in your previous section. \textbf{Sections will be held beginning the week of April 7th}.
+\vskip6pt\noindent Should you need to switch sections, please ask the TA of the section you want to switch to if there is room for you to attend. If the TA allows, you can then begin attending the new section while remaining officially enrolled in your previous section. \textbf{Sections will be held beginning the week of September 30th}.
 
 <!-- \newpage -->
 \subsection*{Required Materials}
-\textsc{The books} and software used for this class are as follows. Note that all are freely available online and do not require purchase.
+\textsc{The required materials} used for this class are as follows. Note that all are freely available online and do not require purchase.
 
 \begin{itemize}
-    \item \textbf{Required for PSTAT 131 students}: \textit{An Introduction to Statistical Learning with Applications in R} (or ISLR), by G. James, D. Witten, T. Hastie, R. Tibshirani. Available: \href{https://www.statlearning.com/}{https://www.statlearning.com/}
-    \item \textbf{Required for PSTAT 231 students}: \textit{The Elements of Statistical Learning: Data Mining, Inference, and Prediction} (or ESL), by T. Hastie, R. Tibshirani, J. Friedman. Available: \href{https://hastie.su.domains/ElemStatLearn/}{https://hastie.su.domains/ElemStatLearn/}
-    \item \textbf{Required for all}:
+    \item \textbf{Required Books:}
     \begin{itemize}
-        \item The R statistical environment version 4.3.2, available here: \href{https://www.r-project.org/}{https://www.r-project.org/}
-        \item The RStudio IDE (integrated development environment) Desktop version. Available: \href{https://www.rstudio.com/products/rstudio/download/#download}{https://www.rstudio.com/} 
-        \item Python 
+      \item \textit{R for Data Science} Second Edition, by H. Wickham, M. Cetinkaya-Rundel, G. Grolemund. Available: \href{https://r4ds.hadley.nz/}{https://r4ds.hadley.nz/}
+      \item \textit{Python Data Science Handbook}, by J. VanderPlas. \href{https://jakevdp.github.io/PythonDataScienceHandbook/}{Available here}
+    \end{itemize}
+    \item \textbf{Required Software:}
+    \begin{itemize}
+      \item The R statistical environment version 4.4.1, available here: \href{https://www.r-project.org/}{https://www.r-project.org/}
+      \item The RStudio IDE (integrated development environment) Desktop version. Available: \href{https://www.rstudio.com/products/rstudio/download/#download}{https://www.rstudio.com/} 
+      \item The Python programming language version 3.12 or higher, available here: \href{https://www.python.org/downloads/}{https://www.python.org/downloads/}
     \end{itemize}
 \end{itemize}
 
 \subsection*{Supplemental Materials}
-\textsc{The following} are materials that are \textbf{not required} for this course, but are \textbf{recommended}. Don't feel expected to read all of these; I encourage you to use them as reference manuals and look subjects up as necessary.
+\textsc{The following} are materials that are \textbf{not required} for this course, but are \textbf{recommended}. Do not feel expected to read all of these; instead I encourage you to use them as reference manuals and look subjects up as necessary. You will not be quizzed on any readings from these books unless directly specified.
 
 \begin{itemize}
-    \item \textit{R for Data Science}, by H. Wickham, G. Grolemund. Available: \href{https://r4ds.had.co.nz/index.html}{https://r4ds.had.co.nz/index.html}
-    \item \textit{The StatQuest Illustrated Guide to Machine Learning}, by Josh Starmer. Available \href{https://www.amazon.com/dp/B0BLM4TLPY}{on Amazon}: \$27 for paperback. Based on videos available free at \href{https://www.youtube.com/@statquest}{https://www.youtube.com/@statquest}
+    \item \textit{Python for Data Analysis} Third Edition, by W. McKinney. Available: \href{https://wesmckinney.com/book/}{https://wesmckinney.com/book/}
+    \item \textit{The StatQuest Illustrated Guide to Machine Learning}, by J. Starmer. Available \href{https://www.amazon.com/dp/B0BLM4TLPY}{on Amazon}: \$27 for paperback. Based on videos available free at \href{https://www.youtube.com/@statquest}{https://www.youtube.com/@statquest}
     \item \textit{Supervised Machine Learning for Text Analysis in R}, by E. Hvitfeldt and J. Silge. Available: \href{https://smltar.com/}{https://smltar.com/}
     \item \textit{Feature Engineering and Selection}, by M. Kuhn and K. Johnson. Available: \href{http://www.feat.engineering/}{http://www.feat.engineering/}
     \item \textit{R Markdown Cookbook}, by Y. Xie, C. Dervieux and E. Riederer. Available: \href{https://bookdown.org/yihui/rmarkdown-cookbook/}{https://bookdown.org/yihui/rmarkdown-cookbook/}
     \item \textit{Tidy Modeling with R}, by M. Kuhn and J. Silge. Available: \href{https://www.tmwr.org/}{https://www.tmwr.org/}
+    \item \textit{Text Mining with R: A Tidy Approach}, by J. Silge and D. Robinson. Available: \href{https://www.tidytextmining.com/}{https://www.tidytextmining.com/}
+    \item \textit{Natural Language Processing with Python}, by S. Bird, E. Klein, and E. Loper. Available: \href{https://www.nltk.org/book/}{https://www.nltk.org/book/}
 \end{itemize}
+
+\subsection*{Learning Outcomes}
+Upon completion of this course, students should be able to:
+\begin{enumerate}
+    \item \textsc{Demonstrate} the ability to use appropriate statistical methodologies for real-world data analysis settings;
+    \item \textsc{Apply} a variety of technological tools, such as statistical software and computer programming languages, for the purpose of statistical data analysis;
+    \item \textsc{Communicate} data science concepts and reasoning in written reports and oral presentations using both technical and non-technical language;
+    \item \textsc{Participate} effectively in teams to accomplish the goals of a data science project.
+\end{enumerate}
 
 <!-- \newpage -->
 \subsection*{Assessments}
-\textsc{Your attainment} of course learning outcomes will be measured by the following assessments, with the relative weighting indicated in parentheses. All assignments within each category are given equal weight.
+\textsc{Your attainment} of these course learning outcomes will be measured by the following assessments, with the relative weighting indicated in parentheses. All assignments within each category are given equal weight.
 
-\vskip6pt\noindent Collaboration and open science are fundamental aspects of data science. You can (and in fact are encouraged) to use the Internet, StackOverflow, etc. as a resource when coding. However, you \textbf{should not} directly copy code or answers. Your code should be well documented; include comments describing each line. If you use a source for help coding, you \textbf{must} cite it. You \textbf{are permitted} to collaborate/work in groups on the homework if you choose, but everyone should work on their own final project -- it is not a group assignment.
+\vskip6pt\noindent Collaboration and open science are fundamental aspects of data science. You can (and in fact are encouraged) to use the Internet, StackOverflow, etc. as a resource when coding. However, you \textbf{should not} directly copy code or answers. Your code should be well documented; include comments describing each line. If you use a source for help coding, you \textbf{must} cite it. You \textbf{are permitted} to collaborate/work in groups on the homework if you choose; if you choose to do so, you should list the names of the students you worked with at the beginning of your submitted homework assignment.
 
-\vskip6pt\noindent You will \textbf{not} be graded on your completion of lab work or your attendance of labs, but doing the labs will be greatly beneficial for your homework and final project grades. You are strongly encouraged to attend lab sections and follow along with the materials for each lab, which will be posted each week.
+\vskip6pt\noindent You are permitted to make use of multimodal large language models (like ChatGPT) when writing the \textbf{code} portions of assignments if you choose. However, you should be aware that the work of such models is often flawed at best, if not outright inaccurate, and be prepared to double- and triple-check your work before submission. If you do use ChatGPT for \textbf{any} part of your code, you absolutely \textbf{must cite} the use of ChatGPT, specifically indicating exactly which lines it was used for and what prompt(s) it was given. If we detect your use of ChatGPT \textbf{without} such a citation, it will be considered plagiarism and handled accordingly. You are \textbf{not permitted} to use ChatGPT to write the text portions of assignments; if we detect such use, it will also be considered plagiarism.
 
 \begin{itemize}
-\item \textbf{Homework} (30\%). Homework is assigned approximately every two weeks (this may vary) and will always be due by Sundays at 11:59 PM PDT. The graduate students will need to complete additional questions, but all assignments are ultimately rescaled to be out of 50 points. There are a total of \textbf{five} homework assignments and none will be dropped.
+\item \textbf{Homework} (30\%). Homework is assigned approximately every two weeks (this may vary) and will always be due by Sundays at 11:59 PM PDT. It will be \textbf{graded for accuracy} and solutions for the homework assignments will be posted approximately one week after each deadline. The graduate students will need to complete additional questions, but all assignments are ultimately rescaled to be out of 50 points. There are a total of \textbf{five} homework assignments and none will be dropped. 
 
-\item \textbf{Labs} (20\%).
+\item \textbf{Labs} (20\%). Section attendance is mandatory, and will be measured through the completion of a lab. Upon participating and completing the labs, you will receive credit for section attendance. You may miss a total of \textbf{two} sections without penalty. Doing the labs will be greatly beneficial for your homework, quiz, and project grades; with that in mind, you are strongly encouraged to attend all lab sections and follow along with the materials for each lab.
 
-\item \textbf{Final Project} (50\%). The final project is a significant portion of the class and allows students to demonstrate their understanding of the material by working with a data set of their own choosing. Each student should begin thinking about their project and looking for a data set immediately; a page on Canvas provides a list of possible resources. You will receive a considerable amount of guidance about the project over the course of the quarter.
+\item \textbf{Quizzes} (20\%) Each week, beginning the week of \textbf{October 7th} and continuing through week 9, there will be a short quiz posted on Canvas. Note that there will be no quiz during Thanksgiving week. There will be a total of \textbf{six quizzes}, with \textbf{no make-up} quizzes. Your lowest quiz score will be dropped.
 
-\vskip6pt\noindent The project will require a large amount of work and cannot be satisfactorily completed in only a day (or even a week). You are \textbf{strongly advised} to work on it in stages throughout the quarter. See Canvas for more detailed instructions, a rubric, and several examples of exemplary past projects.
+You will have a 24-hour window to take each quiz; that window will begin at 8:00 AM Thursday and close at 8:00 AM Friday. Within that window, each quiz will have a 15-minute time limit, which will begin once you open the assignment. (DSP accommodations will be built in via Canvas; make sure you submit an instructor letter for any necessary accommodations.) The quizzes will consist of a few questions similar to the homework; they may be conceptual questions, they may ask you to interpret some results, or they may ask you to perform some analyses. They are meant to serve as academic markers to provide an ongoing assessment of your understanding and to flag areas that may require more attention.
+
+If you do not remember to log in and complete the quiz during that designated 24-hour window, you will receive a zero for that quiz, with no exceptions.
+
+\item \textbf{Final Project} (30\%). The final project is an important portion of the class and allows students to demonstrate their understanding of the material by working with a data set of their choice. Students should begin thinking about a project, forming groups of four (4), and looking for a data set immediately; a page on Canvas provides a list of possible resources. You will receive a considerable amount of guidance about the project over the course of the quarter.
+
+\vskip6pt\noindent During the final exam time for the course (\textbf{Thursday, December 12th from 4:00 to 7:00 PM}), all groups will be required to give a short five-minute presentation on their project, in the form of either a poster or PowerPoint-style slideshow, followed by answering three minutes of questions. Your group will also need to submit a short (3-5 paragraph) report on your project, in the form of a Markdown or Quarto file or a Jupyter notebook.
+
+\vskip6pt\noindent The project will require work and cannot be satisfactorily completed in only a day (or even a week). You are \textbf{strongly advised} to work on it in stages throughout the quarter. See Canvas for more detailed instructions and a rubric. 
+
 \end{itemize}
 
-\subsection*{Course Schedule}
+\subsection*{Tentative Course Schedule}
 \textsc{The weekly} schedule is indicated below. The topics and reading are subject to change based on the progress of the class.
 
 \begin{table}[H]
@@ -144,15 +159,15 @@ them mathematically;
 \toprule
                 & \textbf{Topic}        & \textbf{Assignment}                                            & \textbf{Project Stage} \\ \midrule
 \textbf{Week 1} & Intro to data science           & Data Memo                                                               & Pick topic             \\
-\textbf{Week 2} & Intro to APIs     & Homework 1 & Find data              \\
+\textbf{Week 2} & Application programming interfaces (APIs)     & Homework 1 & Find data              \\
 \textbf{Week 3} & Web scraping   &                                                     & Tidy data              \\
-\textbf{Week 4} & Data cleaning & Homework 2                                                     & EDA                    \\
-\textbf{Week 5} & Data manipulation \& feature engineering &                                                   &                     \\
-\textbf{Week 6} & Data visualization        & Homework 3                                                     & Run models             \\
+\textbf{Week 4} & Data visualization & Homework 2                                                     & EDA                    \\
+\textbf{Week 5} & Data cleaning \& feature engineering &                                                   &                     \\
+\textbf{Week 6} & Data manipulation       & Homework 3                                                     & Run models             \\
 \textbf{Week 7} & Natural language processing (NLP)    & Homework 4                                                     &                        \\
 \textbf{Week 8} & Recommender systems            &                                                      & Write-up               \\
 \textbf{Week 9} & Image classification                  & Homework 5                                                              & Edits                  \\
-\textbf{Week 10} & Neural networks       & Final Project                                                  & Final draft            \\ \bottomrule
+\textbf{Week 10} & Effective communication       & Final Project                                                  & Final draft            \\ \bottomrule
 \end{tabular}
 \end{table}
 
@@ -184,7 +199,7 @@ them mathematically;
 \end{enumerate}
 
 \subsection*{Extra Credit} 
-\textsc{If the class} reaches a 90\% submission rate of ESCI surveys at the end of the quarter, the \textbf{entire class} will receive 2 free points on the final project.
+\textsc{If the class} reaches a 90\% submission rate of course evaluations at the end of the quarter, the \textbf{entire class} will receive 5 free points on the final project.
 
 <!-- %\newpage -->
 \subsection*{Grades} 
@@ -213,7 +228,7 @@ them mathematically;
 \subsection*{Deadlines} 
 \textsc{You receive} two free late homework submissions without penalty. This policy applies only to homeworks. When you wish to use one of these late submissions, simply submit within one week of the original deadline, and \textbf{add a note} at the beginning of the assignment explaining that it is a free late submission.
 
-\vskip6pt\noindent \textsc{Non-exempted} homeworks submitted within one week of the deadline will be awarded 50\% credit. \textbf{No credit} will be awarded for homework turned in more than one week late; please plan ahead and submit your work on time.
+\vskip6pt\noindent \textsc{Non-exempted} homeworks submitted within one week of the deadline will be awarded 50\% credit. \textbf{No credit} will be awarded for homework turned in more than one week late; please plan ahead and submit your work on time. No late quizzes will be accepted.
 
 \vskip6pt\noindent \textsc{The final project} deadline is firm and no late submissions will be accepted.
 
