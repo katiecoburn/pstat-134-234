@@ -101,6 +101,8 @@ knitr::opts_chunk$set(echo = TRUE)
     \end{itemize}
 \end{itemize}
 
+\vskip6pt\noindent If you prefer, rather than installing the required software manually onto your personal computer, you can utilize our course JupyterHub at the following link: \href{https://github.com/katiecoburn/pstat-134-234}{https://github.com/katiecoburn/pstat-134-234}. More information about this is available on Canvas.
+
 \subsection*{Supplemental Materials}
 \textsc{The following} are materials that are \textbf{not required} for this course, but are \textbf{recommended}. Do not feel expected to read all of these; instead I encourage you to use them as reference manuals and look subjects up as necessary. You will not be quizzed on any readings from these books unless directly specified.
 
