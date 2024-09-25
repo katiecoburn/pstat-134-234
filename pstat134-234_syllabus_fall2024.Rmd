@@ -161,9 +161,9 @@ If you do not remember to log in and complete the quiz during that designated 24
 \textbf{Week 1} & Intro to data science           & Data Memo                                                               & Pick topic             \\
 \textbf{Week 2} & Application programming interfaces (APIs)     & Homework 1 & Find data              \\
 \textbf{Week 3} & Web scraping   &                                                     & Tidy data              \\
-\textbf{Week 4} & Data visualization & Homework 2                                                     & EDA                    \\
-\textbf{Week 5} & Data cleaning \& feature engineering &                                                   &                     \\
-\textbf{Week 6} & Data manipulation       & Homework 3                                                     & Run models             \\
+\textbf{Week 4} & Data cleaning & Homework 2                                                     & EDA                    \\
+\textbf{Week 5} & Data manipulation \& feature engineering &                                                   &                     \\
+\textbf{Week 6} & Data visualization       & Homework 3                                                     & Run models             \\
 \textbf{Week 7} & Natural language processing (NLP)    & Homework 4                                                     &                        \\
 \textbf{Week 8} & Recommender systems            &                                                      & Write-up               \\
 \textbf{Week 9} & Image classification                  & Homework 5                                                              & Edits                  \\
