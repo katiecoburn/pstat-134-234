@@ -1,0 +1,63 @@
+---
+title: "Homework 1"
+author: "PSTAT 134/234"
+format: html
+editor: visual
+---
+
+## Homework 1
+
+For this assignment, you may use R or Python, or a combination of both, to complete both case studies. You can use the code that we include in Labs 1 and 2 to answer these questions. You also may need to use other functions. I encourage you to make use of our textbook(s) and use the Internet to help you solve these problems. You can also work together with your classmates. If you do work together, you should provide the names of those classmates below.
+
+[Names of Collaborators (if any):]{.underline}
+
+### Case Study: New York Times Ad Impressions (Simulated)
+
+There are 10 data sets in the `/data` subdirectory named `nyt1.csv`, `nyt2.csv`, ..., `nyt10.csv`. Each file represents one day's worth of simulated data on ad impressions and clicks on the [New York Times homepage](https://www.nytimes.com/). Each row represents a single user. There are five columns:
+
+-   `Age` (user's age)
+
+-   `Gender` (user's gender, coded as `0` = female, `1` = male)
+
+-   `Impressions` (number of ads displayed during the user's visit)
+
+-   `Clicks` (number of clicks made by the user)
+
+-   `Signed_In` (whether or not the user was signed in as a member)
+
+Load **a single data file**. Then do the following.
+
+1.  Create a new variable, `age_group`, that categorizes users into the following age groups: \< 18, 18-24, 25-34, 35-44, 45-54, 55-64, and 65+.
+2.  Plot the distributions of impressions and "click-through rate" for all 6 age categories. (*Note:* Click-through rate is defined as the number of clicks divided by the number of impressions; it represents the proportion of ads that generated clicks.)
+3.  Create a new variable to categorize users based on their click behavior. (The name and categories for this variable are up to you. Explain what decision\[s\] you make and why.)
+4.  Explore the data and make visual and quantitative comparisons across user segments/demographics to answer the following:
+    -   How do \<18 year old males differ from \<18 year old females in terms of clicks and impressions?
+
+    -   How does the distribution of click-through rate for users who are signed in differ from the distribution for those who are **not** signed in?
+
+    -   Are certain age groups more likely to be signed in than others? Which ones?
+5.  Calculate summary statistics for the click-through rate. These should include (1) quartiles, (2) mean, (3) median, (4) minimum and maximum, and (5) variance. Choose two user segments to compare these statistics across (for example, compare the mean, median, and quartiles for users 25-34 to those for users 65+).
+6.  Summarize your findings in a brief (1-2 paragraph) report intended for a New York Times (NYT) advertising team.
+
+#### Additional Questions for 231 Students
+
+*Now read in at least **three to four more** of these data files and extend your analyses.*
+
+7.  Visualize impressions and click-through rate for signed-in versus signed-out users over time.
+8.  Calculate summary statistics to compare signed-in versus signed-out users over time.
+9.  Visualize click-through rate for the six different age groups over time.
+
+### Case Study: Social Media Engagement (Simulated)
+
+The data file `Time-Wasters on Social Media.csv` contains a considerable amount of simulated data intended to mimic real-world social media usage scenarios. It comes from this source on Kaggle: <https://www.kaggle.com/datasets/zeesolver/dark-web>
+
+Read through and familiarize yourself with the variables in the dataset. Then answer the following.
+
+10. Produce a summary of the user data (the information about users: age, gender, location, debt, whether they own property, their profession). If you were asked to describe the "average user," what would you say?
+11. What video categories are more popular with younger users (up to or below age 20)? What categories are more popular with older users (age 50 or above)? Create a plot or table of the distribution of video categories preferred by younger vs. older users.
+12. What platforms are more popular with younger users (up to or below age 20)? What platforms are more popular with older users (age 50 or above)? Create a plot or table of the distribution of platforms preferred by younger vs. older users.
+
+#### Additional Questions for 231 Students
+
+13. Explore the data. What are some patterns that you notice? Create one to two visualizations.
+14. Summarize your findings in a brief (1-2 paragraphs) report.
