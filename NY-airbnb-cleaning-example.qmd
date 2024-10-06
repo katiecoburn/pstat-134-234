@@ -1,0 +1,49 @@
+---
+title: "NY AirBnB Listings Cleaning Example"
+format: html
+editor: visual
+---
+
+## Cleaning AirBnBs
+
+```{r}
+# Albany, NY Sept 5 2024
+library(tidyverse)
+listings <- read_csv("ny_airbnb_listings.csv")
+
+listings$host_location
+listings$price
+mean(listings$price)
+# stringr
+str_replace(listings$price, "\\$", "")
+as.numeric(str_replace(listings$price, "\\$", ""))[165]
+
+listings <- listings %>% 
+  mutate(price = str_replace(price, "\\$", "")) %>% 
+  mutate(price = str_replace(price, ",", "")) %>% 
+  mutate(price = as.numeric(price))
+listings$price[165]
+mean(listings$price, na.rm = TRUE)
+listings$host_location %>% table()
+# Keep every location with "NY" -> change them to "New York"
+# Turn others into "Other"
+# Leave NAs alone
+str_detect(listings$host_location, "NY")
+listings <- listings %>% 
+  mutate(host_location = case_when(
+    str_detect(host_location, "NY") == TRUE ~ "New York",
+    str_detect(host_location, "NY") == FALSE ~ "Other"
+  ))
+listings$host_location %>% 
+  table()
+listings %>% group_by(host_location) %>% 
+  summarize(mean(price, na.rm = T))
+listings %>% 
+  ggplot(aes(x = host_location, y = price)) + geom_boxplot()
+
+listings %>% ggplot(aes(color = host_location, x = price)) +
+  geom_density()
+
+listings %>% ggplot(aes(x = price)) + geom_histogram()
+listings %>% filter(price > 1000)
+```
