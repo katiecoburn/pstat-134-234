@@ -3,3 +3,4 @@
 .RData
 .Ruserdata
 lecture_slides/
+.httr-oauth
