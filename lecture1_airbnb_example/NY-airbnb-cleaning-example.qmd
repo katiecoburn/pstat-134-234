@@ -1,0 +1,129 @@
+---
+title: "NY AirBnB Listings Cleaning Example"
+format: html
+editor: visual
+---
+
+## Cleaning AirBnBs
+
+```{r}
+# Detailed listings data from NY 05 September 2024
+# Scraped from AirBnB via insideairbnb.com
+# https://insideairbnb.com/get-the-data/
+library(tidyverse)
+listings <- read_csv("ny_airbnb_listings.csv") %>% tibble()
+# View(listings)
+# Is this tidy data?
+listings$host_location %>% head()
+listings$price %>% head()
+# What if we wanted to look at average price?
+mean(listings$price)
+# We need to remove the dollar sign:
+str_replace(listings$price, "\\$", "") %>% head()
+# Can we then just do as.numeric() ?
+as.numeric(str_replace(listings$price, "\\$", "")) %>% head()
+# What does NAs introduced by coercion mean?
+listings$price[165]
+as.numeric(str_replace(listings$price, "\\$", ""))[165]
+# So we also need to remove the commas:
+listings <- listings %>% 
+  mutate(price = str_replace(price, "\\$", "")) %>% 
+  mutate(price = str_replace(price, ",", "")) %>% 
+  mutate(price = as.numeric(price))
+listings$price[165]
+# Now that worked
+mean(listings$price, na.rm = TRUE)
+
+# Let's look at location now
+listings$host_location %>% head()
+# Host location is quite messy. One way we can handle it is to
+# keep every location with "NY" -> change them to "New York"
+# Turn others into "Other"
+# Leave NAs alone
+str_detect(listings$host_location, "NY") %>% head()
+listings <- listings %>% 
+  mutate(host_location = case_when(
+    str_detect(host_location, "NY") == TRUE ~ "New York",
+    str_detect(host_location, "NY") == FALSE ~ "Other"
+  ))
+# Now we can see how many hosts of Albany properties actually live in
+# New York vs other locations:
+listings$host_location %>% 
+  table()
+# We can also see the average price across host locations:
+listings %>% group_by(host_location) %>% 
+  summarize(mean(price, na.rm = T))
+# We can visualize the distributions of price across locations:
+listings %>% 
+  ggplot(aes(x = host_location, y = price)) + geom_boxplot()
+
+listings %>% ggplot(aes(color = host_location, x = price)) +
+  geom_density()
+
+# This might make us wonder what the distribution of price itself
+# looks like:
+listings %>% ggplot(aes(x = price)) + geom_histogram()
+# What observations have such high price per night?
+listings %>% filter(price > 1000)
+```
+
+```{python}
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import re
+pd.set_option('display.max_rows', 200)
+pd.set_option('display.max_columns', 200)
+
+listings = pd.read_csv("ny_airbnb_listings.csv")
+
+print(listings['host_location'])
+print(listings['price'])
+
+listings['price'] = listings['price'].str.replace(r'\$', '', regex=True)
+print(listings['price'].isna().sum()) # Count of NA values
+
+# Convert price to numeric?
+pd.to_numeric(listings['price'], errors='coerce')
+# Unlike R which coerces by default we have to tell Python to do so;
+# otherwise it just throws an error
+# (although it does tell us where/which observation)
+print(listings['price'].iloc[164])
+
+listings['price'] = listings['price'].str.replace(',', '', regex=True)
+listings['price'] = pd.to_numeric(listings['price'], errors='coerce')
+
+mean_price = listings['price'].mean()
+print(mean_price) # Note that Python ignores NaNs by default
+
+print(listings['host_location'])
+
+listings['host_location'] = listings['host_location'].apply(
+  lambda x: "New York" if "NY" in str(x) else ("Other" if pd.notna(x) else np.nan)
+)
+
+print(listings['host_location'].value_counts())
+
+mean_price_by_location = listings.groupby('host_location')['price'].mean()
+print(mean_price_by_location)
+
+plt.figure(figsize=(12, 6))
+sns.boxplot(x='host_location', y='price', data=listings)
+plt.title('Price Distribution Across Locations')
+plt.show()
+
+plt.figure(figsize=(12, 6))
+sns.kdeplot(data=listings, x='price', hue='host_location', common_norm=False)
+plt.title('Density of Price by Location')
+plt.show()
+
+plt.figure(figsize=(12, 6))
+sns.histplot(listings['price'], bins=30, kde=True)
+plt.title('Histogram of Price Distribution')
+plt.show()
+
+high_price_listings = listings[listings['price'] > 1000]
+print(high_price_listings)
+```
+
