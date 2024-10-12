@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">  <!-- Specify the character encoding for the document -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  <!-- Make the page responsive -->
+    <title>Weather App</title>  <!-- Title of the webpage -->
+</head>
+<body>
+    <h1>Current Weather</h1>  <!-- Main heading of the page -->
+    
+    <!-- Form for user to input location -->
+    <form method="POST">  <!-- Form submits data using POST method -->
+        <input type="text" name="location" placeholder="Enter location" required>  <!-- Text input for location -->
+        <button type="submit">Get Weather</button>  <!-- Button to submit the form -->
+    </form>
+
+    <!-- Check if weather data is available -->
+    {% if weather %}
+        <h2>Weather in {{ weather['location']['name'] }}:</h2>  <!-- Display the location name -->
+        <p>Temperature: {{ weather['current']['temp_f'] }}°F</p>  <!-- Display current temperature in Fahrenheit -->
+        <p> Feels Like: {{ weather['current']['feelslike_f'] }}°F</p> <!-- Display what temperature feels like currently -->
+        <p>Condition: {{ weather['current']['condition']['text'] }} </p>  <!-- Display weather condition -->
+        <p><img src="{{ weather['current']['condition']['icon'] }}"></p>
+        <p>Humidity: {{ weather['current']['humidity'] }}%</p>  <!-- Display humidity percentage -->
+        <p>Wind Speed: {{ weather['current']['wind_kph'] }} kph</p>  <!-- Display wind speed in kph -->
+    {% endif %}
+</body>
+</html>

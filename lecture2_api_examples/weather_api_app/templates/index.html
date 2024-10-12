@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style type="text/css">
+.inline {
+  background-color: #f7f7f7;
+  border:solid 1px #B0B0B0;
+}
+.error {
+	font-weight: bold;
+	color: #FF0000;
+}
+.warning {
+	font-weight: bold;
+}
+.message {
+	font-style: italic;
+}
+.source, .output, .warning, .error, .message {
+	padding: 0 1em;
+  border:solid 1px #F7F7F7;
+}
+.source {
+  background-color: #f5f5f5;
+}
+.left {
+  text-align: left;
+}
+.right {
+  text-align: right;
+}
+.center {
+  text-align: center;
+}
+.hl.num {
+  color: #AF0F91;
+}
+.hl.str {
+  color: #317ECC;
+}
+.hl.com {
+  color: #AD95AF;
+  font-style: italic;
+}
+.hl.opt {
+  color: #000000;
+}
+.hl.std {
+  color: #585858;
+}
+.hl.kwa {
+  color: #295F94;
+  font-weight: bold;
+}
+.hl.kwb {
+  color: #B05A65;
+}
+.hl.kwc {
+  color: #55aa55;
+}
+.hl.kwd {
+  color: #BC5A65;
+  font-weight: bold;
+}
+</style>
+    <meta charset="UTF-8">  <!-- Specify the character encoding for the document -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  <!-- Make the page responsive -->
+    <title>Weather App</title>  <!-- Title of the webpage -->
+</head>
+<body>
+    <h1>Current Weather</h1>  <!-- Main heading of the page -->
+    
+    <!-- Form for user to input location -->
+    <form method="POST">  <!-- Form submits data using POST method -->
+        <input type="text" name="location" placeholder="Enter location" required>  <!-- Text input for location -->
+        <button type="submit">Get Weather</button>  <!-- Button to submit the form -->
+    </form>
+
+    <!-- Check if weather data is available -->
+    {% if weather %}
+        <h2>Weather in {{ weather['location']['name'] }}:</h2>  <!-- Display the location name -->
+        <p>Temperature: {{ weather['current']['temp_f'] }}°F</p>  <!-- Display current temperature in Fahrenheit -->
+        <p> Feels Like: {{ weather['current']['feelslike_f'] }}°F</p> <!-- Display what temperature feels like currently -->
+        <p>Condition: {{ weather['current']['condition']['text'] }} </p>  <!-- Display weather condition -->
+        <p><img src="{{ weather['current']['condition']['icon'] }}"></p>
+        <p>Humidity: {{ weather['current']['humidity'] }}%</p>  <!-- Display humidity percentage -->
+        <p>Wind Speed: {{ weather['current']['wind_kph'] }} kph</p>  <!-- Display wind speed in kph -->
+    {% endif %}
+</body>
+</html>
