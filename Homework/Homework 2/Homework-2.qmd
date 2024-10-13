@@ -1,0 +1,118 @@
+---
+title: "Homework 2"
+author: "PSTAT 134/234"
+format: html
+editor: visual
+---
+
+## Homework 2
+
+### Part One: Analyzing the Weather
+
+In this section, you will gain more practice working with public APIs, this time using a public weather API, [WeatherAPI](https://www.weatherapi.com/). The first thing you'll need to access the API is an API key. You can sign up for a key here: <https://www.weatherapi.com/signup.aspx>
+
+#### Exercise 1
+
+Use the <http://api.weatherapi.com/v1/current.json> URL to access the API and obtain real-time weather data. Note that you will want to specify three query parameters, at least – `key`, which should be set to your individual API key, `q`, which should equal the latitude and longitude of a specified location – for example `q = "34.432961, -119.856870"` – and `aqi`, which indicates whether you want to obtain air quality data (`"yes"` or `"no"`).
+
+Obtain current real-time weather data for **fifty randomly-selected locations**. You should use the following code to select fifty locations:
+
+```{r}
+set.seed(3435)
+longitude <- round(runif(n = 50, min = -100, max = 100), 
+                   digits = 6)
+latitude <- round(runif(n = 50, min = -90, max = 90), 
+                   digits = 6)
+```
+
+*Note: This works by randomly generating pairs of latitude and longitude values. For `longitude`, we generate 50 random draws from a uniform distribution with a lower bound of* $-100$ *and an upper bound of* $100$*, then round these values to the **sixth** decimal place. For `latitude`, we follow the same procedure, but change the lower bound to* $-90$ *and the upper bound to* $90$*.*
+
+**Make** **sure** to set the correct seed before running this code. Verify that the mean of these latitude values is `7.177744` and the mean of these longitude values is `3.127516`. This ensures that you are all working with the same locations (although your results will still differ, depending on when you obtain the data).
+
+#### Exercise 2
+
+Write code in R or Python (your choice) to extract and store the following data for each location:
+
+-   City name
+
+-   Country
+
+-   Whether or not it is currently daytime there
+
+-   Temperature (in Fahrenheit)
+
+-   Humidity
+
+-   Weather description (`condition` text; for example, "Mist", "Clear", etc.)
+
+-   Wind speed (in miles per hour)
+
+-   Precipitation (in millimeters)
+
+-   US EPA air quality index (ranges from $1$ to $6$, representing the 6 categories of air quality: <https://www.airnow.gov/aqi/aqi-basics/>)
+
+#### Exercise 3
+
+Create a scatterplot of temperature vs. humidity. Add a linear regression line to the plot. What are the estimated intercept and slope values for this linear regression? Does there appear to be a significant relationship between temperature and humidity?
+
+#### Exercise 4
+
+Create a bar chart of the EPA air quality index values. What does the distribution of air quality look like? Identify the location(s) with the best air quality and the worst air quality.
+
+#### Exercise 5
+
+Create a bar chart of the current weather description. Which conditions are the most common? Which are the least?
+
+#### Exercises for 234 Students
+
+##### Exercise 6
+
+Do you think day vs. night cycles cause a significant difference in temperature? Test this hypothesis using a *t*-test.
+
+##### Exercise 7
+
+Create a table of the average temperature, humidity, wind speed, and precipitation broken down by weather description.
+
+##### Exercise 8
+
+Learn how to use the forecast API (<http://api.weatherapi.com/v1/forecast.json>).
+
+Determine the chance of rain (in percentage) for Goleta, California tomorrow. *(Note that "tomorrow" may vary depending on when you do this assignment; that is fine.)*
+
+Based on the percentage you obtained, do you think it will rain in Goleta tomorrow?
+
+### Part Two: Scraping Books
+
+In this section, you'll practice your web scraping skills by experimenting with a fictional online bookstore located at <https://books.toscrape.com/>. Use the tools that we demonstrate in class to do the following, in either R or Python (your choice):
+
+#### Exercise 9
+
+Scrape the first 20 results from this site. Create a data frame (or tibble) that stores the following for each book:
+
+-   Title
+
+-   Price (excluding tax)
+
+-   Star rating
+
+-   Whether the book is in stock
+
+#### Exercise 10
+
+Create a histogram of prices for these 20 books. What is the average price?
+
+#### Exercise 11
+
+Create a bar chart of star rating for these 20 books. Find the book(s) with the highest and lowest star ratings.
+
+#### Exercises for 234 Students
+
+##### Exercise 12
+
+Extend your skills; instead of scraping only the first 20 books, scrape the first **two hundred books**.
+
+For each book, in addition to the information we stored previously (title, price, star rating, etc.), figure out how to extract the **category** (i.e., Travel, Mystery, Classics, etc.).
+
+##### Exercise 13
+
+What is the most common category? What is the least common?
