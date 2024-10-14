@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.555">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="PSTAT 134/234">
+
+<title>Lab 3</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="lab-3_files/libs/clipboard/clipboard.min.js"></script>
+<script src="lab-3_files/libs/quarto-html/quarto.js"></script>
+<script src="lab-3_files/libs/quarto-html/popper.min.js"></script>
+<script src="lab-3_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="lab-3_files/libs/quarto-html/anchor.min.js"></script>
+<link href="lab-3_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="lab-3_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="lab-3_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="lab-3_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="lab-3_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Lab 3</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>PSTAT 134/234 </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="web-scraping" class="level2">
+<h2 class="anchored" data-anchor-id="web-scraping">Web Scraping</h2>
+<p>As we’ll talk about in lecture, it’s important to scrape websites consciously, with minimal negative impact. Every time you load a website, you’re technically making a request to that server. As an individual person browsing the Web, there’s only so many requests you will likely make in a given period of time, even if you visit a lot of websites or refresh pages a few times. But with a scraper that could potentially execute thousands of requests a second, you could end up costing the Web site owner a <strong>lot of money</strong> and even possibly <strong>bring down their site</strong> (this is called a <a href="https://en.wikipedia.org/wiki/Denial-of-service_attack">Denial-of-Service attack, or DoS</a>).</p>
+<p>You also want to make sure that it is legal to scrape a specific Web site at all.</p>
+<p>Two general rules that we will <u><strong>always</strong></u> follow are:</p>
+<ol type="1">
+<li>Make only one request per page;</li>
+<li>Wait a little between each request.</li>
+</ol>
+</section>
+<section id="data-to-scrape" class="level2">
+<h2 class="anchored" data-anchor-id="data-to-scrape">Data to Scrape</h2>
+<p>For this week’s lab, we’ll work with this Web page: <a href="https://www.allsides.com/media-bias/ratings" class="uri">https://www.allsides.com/media-bias/ratings</a></p>
+<p>AllSides is an interesting site that attempts to make the political leanings of different media sources more transparent. Their ratings page displays a number of different news sources, along with their overall rating of the source, on a scale from “Left” to “Right,” and the proportion of members of the public who agree with that rating.</p>
+<p>This is especially relevant in light of our upcoming election – and this page provides some unique challenges, so it should be a great candidate for an example.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/Screenshot%202024-10-13%20at%203.14.49%20PM.png" class="img-fluid figure-img"></p>
+<figcaption>Screengrab of AllSides ratings page.</figcaption>
+</figure>
+</div>
+<p>Before scraping any web site, you’ll want to investigate their Terms of Service (sometimes called Terms of Use) and their <code>robots.txt</code> file. The Terms of Use page for this site makes no discernible mention of web scraping (see here: <a href="https://www.allsides.com/terms-of-use" class="uri">https://www.allsides.com/terms-of-use</a>). To double-check, you can search the page for terms related to web scraping or crawling. Nothing pops up, so we’re good there. Next, we check <code>robots.txt</code>. Here’s theirs: <a href="https://www.allsides.com/robots.txt" class="uri">https://www.allsides.com/robots.txt</a> The page that we want to scrape isn’t listed under any of their “Disallow” sections. We should note that <code>Crawl-delay: 10</code>, which means they request that anyone using a web crawler should wait 10 seconds between requests. Otherwise, we are good to go!</p>
+<p>Let’s do the actual scraping. Remember, be very careful to access the page (run <code>read_html</code>) <strong>only once</strong>. If you try to access it more than once, it may actually stop working and give you an error (often Error 403; look back at our API notes to find what that code stands for).</p>
+<p>Run <code>read_html</code> <strong>once</strong>, then store the results. My code to do so is as follows:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages("rvest")</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rvest)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages("xml2")</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(xml2)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># html &lt;- read_html("https://www.allsides.com/media-bias/ratings")</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Notice that we store this so we ONLY REQUEST THE PAGE ONCE.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># I save the results and load it back in so that I don't re-request</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># every time I render.</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># write_html(html, file = "lab-3-data.html")</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>html <span class="ot">&lt;-</span> <span class="fu">read_html</span>(<span class="at">x =</span> <span class="st">"lab-3-data.html"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="scraping-in-r-rvest" class="level2">
+<h2 class="anchored" data-anchor-id="scraping-in-r-rvest">Scraping in R: <code>rvest</code></h2>
+<p>First we need to find where and how the data we want are structured inside the HTML for our Web page. Unfortunately, every Web page is likely to be at least slightly different. Some will use tables, some won’t; some will use JavaScript, some won’t; some will use frames, some won’t. The more complex the structure of the Web page, the harder it may ultimately be to scrape. This is why, if a company or organization has a publicly available API, it’s almost always easier and more efficient to access their data using their API.</p>
+<p>Not every site <strong>has</strong> an API, however. Sometimes the information you want is just not directly downloadable – and copying and pasting text, which is a sort of manual “web scraping,” in a sense, is very slow and prone to errors. So we turn to web scraping.</p>
+<p>Most browsers (Safari, Chrome, Firefox, etc.) are kind enough to provide a relatively quick way of finding the selector for an individual element using their developer tools. In Google Chrome, you can simply right-click on the element of interest, then click on <code>Inspect</code>. When you do, the developer tools pane will appear, highlighting the element you clicked on.</p>
+<p>If I highlight the entire table, for example, and then <code>Inspect</code>, I see the following:</p>
+<p><img src="images/Screenshot%202024-10-13%20at%204.10.12%20PM.png" class="img-fluid"></p>
+<p>This tells us that all the news source data is neatly stored inside one big table. That makes our life much easier. Each row’s information is stored within the <code>&lt;tr&gt;&lt;/tr&gt;</code> tags within <code>&lt;tbody&gt;&lt;/tbody&gt;</code>. We can look at a single row like this:</p>
+<p><img src="images/Screenshot%202024-10-13%20at%204.11.04%20PM.png" class="img-fluid"></p>
+<p>So to extract the data for each source, we just need to select all the <code>&lt;tr&gt;</code> tags within <code>&lt;tbody&gt;</code>. In R, we can do this by:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>table_rows <span class="ot">&lt;-</span> html <span class="sc">%&gt;%</span> </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">"tbody"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">"tr"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we have a set of 50 HTML table rows (one per source) that each contain four cells:</p>
+<ul>
+<li><p>News source name and link</p></li>
+<li><p>Bias data</p></li>
+<li><p>Agreement buttons</p></li>
+<li><p>Community feedback data</p></li>
+</ul>
+<p>Let’s break down how we could extract all this information. First of all, the <strong>news source name</strong>. If we highlight the first name and <code>Inspect</code>, we see that:</p>
+<p><img src="images/Screenshot%202024-10-13%20at%204.22.31%20PM.png" class="img-fluid"></p>
+<p>The outlet name – <code>ABC News (Online)</code> – is the text of an <strong>anchor tag</strong> (the <code>&lt;a href&gt;</code>), which is nested inside a <code>&lt;td&gt;</code> tag. We don’t just want to ask for all <code>&lt;td&gt;</code> tags, because that would return almost everything, not just the names. Instead, we can ask for all the HTML elements with <code>.source-title</code>, which pulls out all the <code>&lt;td&gt;</code> tags whose class contains <code>source-title</code>.</p>
+<p>We then pass those elements to <code>html_text2()</code>, which drops the <code>&lt;td&gt;</code> and <code>&lt;a href&gt;</code> tags and simply retains the text of the source titles:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>source_titles <span class="ot">&lt;-</span> table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">".source-title"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_text2</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We also might want to obtain the link for each news source’s page on AllSides. We can pull that out while we’re here; it’s also in the <code>&lt;td&gt;</code> tags with <code>source-title</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>source_links <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://www.allsides.com"</span>, </span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>                       (table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">html_elements</span>(<span class="st">".source-title"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">html_elements</span>(<span class="st">"a"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">html_attr</span>(<span class="st">"href"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Notice that this time we need to ask for the <code>&lt;a&gt;</code> elements, and then, rather than simply extracting the text, we want the attribute value that is assigned to <code>href</code>, which is the text to our links.</p>
+<p>Each source’s link is actually just what is called a relative path; for example, rather than <a href="https://www.allsides.com/news-source/forbes" class="uri">https://www.allsides.com/news-source/forbes</a>, the link is simply <a href="/news-source/forbes">/news-source/forbes</a>. That works if you’re on the AllSides page already, but if we just wanted to get to that page directly from anywhere, it wouldn’t work. That’s why we use <code>paste0</code> to add the first part of the URL to each source’s link.</p>
+<p>Now let’s look at the bias rating. Well, this seems tricky. The bias rating information is stored in an image! How can we extract that information in words?</p>
+<p>Take a look at the HTML code for one of the bias rating images:</p>
+<p><img src="images/Screenshot%202024-10-13%20at%204.32.15%20PM.png" class="img-fluid"></p>
+<p>The image is linked inside this <code>&lt;td class&gt;</code> tag, and the <strong>image</strong> itself is wrapped inside another link tag, an <code>&lt;a href&gt;</code> tag! The best part is that this link goes to <code>/media-bias/left-center</code>. You can click on some of the bias ratings to verify. Each rating points to a link about the definition of that category; in other words, sources rated <code>left-center</code> link to that page, sources rated <code>center</code> link to <strong>that</strong> page, and so on. This means that we can extract the bias rating information itself simply by accessing that link tag.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>source_bias <span class="ot">&lt;-</span> table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">".views-field-field-bias-image"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">"a"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_attr</span>(<span class="st">"href"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_remove</span>(<span class="st">"/media-bias/"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You can run each line there one at a time to verify what we’re doing. We essentially pull out the relative path from each link, then drop the first part of the path (the <code>"/media-bias/"</code>) to retain only the last part. Each source now has a value of <code>left-center</code>, <code>left</code>, <code>center</code>, <code>right-center</code>, etc., accordingly.</p>
+<p>The last thing we might want is the community feedback data – how many people agreed vs.&nbsp;disagreed with the rating, and the judgment (strongly agrees, absolutely agrees, etc.). This information is certainly more convoluted. The number of people who agree and disagree is, at least, relatively easy to grab, because their tags have classes unique to that cell, <code>"agree"</code> or <code>"disagree"</code>.</p>
+<p><img src="images/Screenshot%202024-10-13%20at%204.46.43%20PM.png" class="img-fluid"></p>
+<p>We can pluck them out, read the text, and convert them to numbers as follows:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>source_agree <span class="ot">&lt;-</span> table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_element</span>(<span class="st">".agree"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_text2</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.numeric</span>()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>source_disagree <span class="ot">&lt;-</span> table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_element</span>(<span class="st">".disagree"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_text2</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.numeric</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We also might want the ratio of agree to disagree:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>source_agree_ratio <span class="ot">&lt;-</span> source_agree<span class="sc">/</span>source_disagree</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we just have the last part, the text saying whether the community agrees, strongly agrees, etc. That might seem like the easiest part to extract, but you’ll find it is surprisingly difficult. If you just run:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">".commtext"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>{xml_nodeset (0)}</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># nothing!</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># because that part is rendered with javascript and would</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># require special techniques to extract</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># so we can do some digging into their javascript (.js) files</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># and find that they have a function that calculates the text with</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># these parameters:</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You get absolutely nothing. Why? Because that text is rendered with JavaScript. There are certain tools for web scraping that allow you to extract information rendered with JavaScript, although that takes a little more work. In this case, since this is the only piece of information rendered that way, we can manually recreate it. How can we do that? Well, first we need to figure out what AllSides’ criteria are for determining whether the community agrees, strongly agrees, etc.</p>
+<p>You can do a search (CTRL-F) for <code>"js"</code> in the file source to find all the JavaScript files they’re using and open the files in a new tab to look for their rules. Note that this is more work than I would ask you to do on your homework assignment, for example, as the rules were in their <strong>eleventh</strong> JavaScript file. They have a function that calculates the text based on the ratio of agree to disagree, as follows:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Range</th>
+<th>Agreeance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(ratio &gt; 3\)</span></td>
+<td>absolutely agrees</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(2 &lt; ratio \leq 3\)</span></td>
+<td>strongly agrees</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(1.5 &lt; ratio \leq 2\)</span></td>
+<td>agrees</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(1 &lt; ratio \leq 1.5\)</span></td>
+<td>somewhat agrees</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(ratio = 1\)</span></td>
+<td>neutral</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(0.67 &lt; ratio &lt; 1\)</span></td>
+<td>somewhat disagrees</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(0.5 &lt; ratio \leq 0.67\)</span></td>
+<td>disagrees</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(0.33 &lt; ratio \leq 0.5\)</span></td>
+<td>strongly disagrees</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(ratio \leq 0.33\)</span></td>
+<td>absolutely disagrees</td>
+</tr>
+</tbody>
+</table>
+<p>So we can replicate that in R:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>get_agreement_text <span class="ot">&lt;-</span> <span class="cf">function</span>(ratio) {</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">case_when</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    ratio <span class="sc">&gt;</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"absolutely agrees"</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    ratio <span class="sc">&gt;</span> <span class="dv">2</span> <span class="sc">&amp;</span> ratio <span class="sc">&lt;=</span> <span class="dv">3</span> <span class="sc">~</span> <span class="st">"strongly agrees"</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    ratio <span class="sc">&gt;</span> <span class="fl">1.5</span> <span class="sc">&amp;</span> ratio <span class="sc">&lt;=</span> <span class="dv">2</span> <span class="sc">~</span> <span class="st">"agrees"</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    ratio <span class="sc">&gt;</span> <span class="dv">1</span> <span class="sc">&amp;</span> ratio <span class="sc">&lt;=</span> <span class="fl">1.5</span> <span class="sc">~</span> <span class="st">"somewhat agrees"</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    ratio <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"neutral"</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    ratio <span class="sc">&gt;</span> <span class="fl">0.67</span> <span class="sc">&amp;</span> ratio <span class="sc">&lt;</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">"somewhat disagrees"</span>,</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    ratio <span class="sc">&gt;</span> <span class="fl">0.5</span> <span class="sc">&amp;</span> ratio <span class="sc">&lt;=</span> <span class="fl">0.67</span> <span class="sc">~</span> <span class="st">"disagrees"</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    ratio <span class="sc">&gt;</span> <span class="fl">0.33</span> <span class="sc">&amp;</span> ratio <span class="sc">&lt;=</span> <span class="fl">0.5</span> <span class="sc">~</span> <span class="st">"strongly disagrees"</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    ratio <span class="sc">&lt;=</span> <span class="fl">0.33</span> <span class="sc">~</span> <span class="st">"absolutely disagrees"</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Let's verify that the function works:</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="fu">get_agreement_text</span>(<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "neutral"</code></pre>
+</div>
+</div>
+<p>Now let’s lay all that code out and make a data frame (tibble) of the first 50 rows – that whole page:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>source_titles <span class="ot">&lt;-</span> table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">".source-title"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_text2</span>()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>source_links <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://www.allsides.com"</span>, </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>                       (table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">html_elements</span>(<span class="st">".source-title"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">html_elements</span>(<span class="st">"a"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">html_attr</span>(<span class="st">"href"</span>)))</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>source_bias <span class="ot">&lt;-</span> table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">".views-field-field-bias-image"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_elements</span>(<span class="st">"a"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_attr</span>(<span class="st">"href"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">str_remove</span>(<span class="st">"/media-bias/"</span>)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>source_agree <span class="ot">&lt;-</span> table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_element</span>(<span class="st">".agree"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_text2</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.numeric</span>()</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>source_disagree <span class="ot">&lt;-</span> table_rows <span class="sc">%&gt;%</span> </span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_element</span>(<span class="st">".disagree"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_text2</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.numeric</span>()</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>source_agree_ratio <span class="ot">&lt;-</span> source_agree<span class="sc">/</span>source_disagree</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>source_agreement <span class="ot">&lt;-</span> <span class="fu">get_agreement_text</span>(source_agree_ratio)</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>data <span class="ot">=</span> <span class="fu">tibble</span>(source_titles, source_links, source_bias,</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>              source_agree, source_disagree, source_agree_ratio,</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>              source_agreement)</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 50 × 7
+   source_titles           source_links source_bias source_agree source_disagree
+   &lt;chr&gt;                   &lt;chr&gt;        &lt;chr&gt;              &lt;dbl&gt;           &lt;dbl&gt;
+ 1 ABC News (Online)       https://www… left-center        46837           23302
+ 2 AlterNet                https://www… left               17456            4393
+ 3 Associated Press        https://www… left-center        40154           32767
+ 4 Associated Press Fact … https://www… left-center         7887            9705
+ 5 Axios                   https://www… left-center        10071           11247
+ 6 BBC News                https://www… center             37785           34017
+ 7 Bloomberg               https://www… left-center        19462           24634
+ 8 Breitbart News          https://www… right              46557           12916
+ 9 Business Insider        https://www… left-center         7422            9556
+10 BuzzFeed News           https://www… left               30205           10405
+# ℹ 40 more rows
+# ℹ 2 more variables: source_agree_ratio &lt;dbl&gt;, source_agreement &lt;chr&gt;</code></pre>
+</div>
+</div>
+<p>How could you scale this up? Well, imagine that there were multiple pages of sources and ratings. If each page had the same structure, and the URLs followed some kind of consistent pattern – for example, if the second page had the URL <a href="https://www.allsides.com/media-bias/ratings?page=2" class="uri">https://www.allsides.com/media-bias/ratings?page=2</a>, and so on – you could simply write a loop, like so, to extract information from multiple pages:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>urls <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"https://www.allsides.com/media-bias/ratings"</span>,</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>          <span class="st">"https://www.allsides.com/media-bias/ratings?page=2"</span>,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>          <span class="st">"https://www.allsides.com/media-bias/ratings?page=3"</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(urls)){</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  html <span class="ot">&lt;-</span> <span class="fu">read_html</span>(urls[i])</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  table_rows <span class="ot">&lt;-</span> html <span class="sc">%&gt;%</span> </span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">html_elements</span>(<span class="st">"tbody"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">html_elements</span>(<span class="st">"tr"</span>)</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_data</span>(table_rows) <span class="co"># Notice this is not a real function;</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># instead you would run whatever code you'd created to extract the data.</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">Sys.sleep</span>(<span class="dv">10</span>) <span class="co"># to wait 10 seconds between requests</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Note that I set <code>eval=FALSE</code> to the above code chunk; AllSides doesn’t follow that URL structure, so this is a hypothetical example to demonstrate how the process would work for a website that was organized this way.</p>
+<p>Now let’s take a look at the data that we scraped!</p>
+<section id="exercises" class="level3">
+<h3 class="anchored" data-anchor-id="exercises">Exercises</h3>
+<ol type="1">
+<li>Find all the sources on which the community <strong>absolutely agrees</strong>. Display the titles of these sources and their bias. How many “center” sources does the community absolutely agree on?</li>
+<li>Which sources do the community <strong>disagree</strong> on? (Consider “somewhat disagrees” to “absolutely disagrees”.)</li>
+<li>Make a bar chart of community agreeance. Does the community tend to agree or disagree with AllSides’ ratings?</li>
+<li>Make a table of bias. What do you notice?</li>
+<li>Study the following plot. What patterns do you notice? Pay attention to each line of code and see if you can figure out what each part does.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>data <span class="sc">%&gt;%</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">c</span>(source_agree, source_disagree), <span class="at">names_to =</span> <span class="st">"feedback"</span>, <span class="at">values_to =</span> <span class="st">"count"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(source_titles) <span class="sc">%&gt;%</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">proportion =</span> count <span class="sc">/</span> <span class="fu">sum</span>(count)) <span class="sc">%&gt;%</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">agree_proportion =</span> <span class="fu">sum</span>(count[feedback <span class="sc">==</span> <span class="st">"source_agree"</span>]) <span class="sc">/</span> <span class="fu">sum</span>(count)) <span class="sc">%&gt;%</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">source_titles =</span> <span class="fu">reorder</span>(source_titles, agree_proportion)) <span class="sc">%&gt;%</span> </span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">y =</span> source_titles)) <span class="sc">+</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="fu">aes</span>(<span class="at">x =</span> proportion, <span class="at">fill =</span> <span class="fu">factor</span>(feedback)), <span class="at">position =</span> <span class="st">"fill"</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>           <span class="at">stat =</span> <span class="st">"identity"</span>) <span class="sc">+</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">fill =</span> <span class="fu">guide_legend</span>(<span class="at">title =</span> <span class="cn">NULL</span>)) <span class="sc">+</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"#5DAF83"</span>, <span class="st">"#AF3B3B"</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Agree"</span>, <span class="st">"Disagree"</span>)) <span class="sc">+</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Percentage"</span>, <span class="at">y =</span> <span class="st">""</span>) <span class="sc">+</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.y =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">8</span>, <span class="at">angle =</span> <span class="dv">10</span>)) <span class="sc">+</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent, <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="lab-3_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="scraping-in-python-beautiful-soup" class="level2">
+<h2 class="anchored" data-anchor-id="scraping-in-python-beautiful-soup">Scraping in Python: <code>Beautiful Soup</code></h2>
+<p>If you are wanting to use Python to build your web scraper, there’s no library I would recommend more than <code>Beautiful Soup</code>. Read more about it here: <a href="https://www.crummy.com/software/BeautifulSoup/" class="uri">https://www.crummy.com/software/BeautifulSoup/</a> You can also find their “Hall of Fame,” a selection of projects made with the software.</p>
+<p><code>BeautifulSoup</code> was created in 2004. Its name is meant to be a reference to both the term “tag soup,” which refers to poorly-organized HTML code, and the poem “Beautiful Soup,” from <u>Alice in Wonderland</u>. The implication is that this Python library enables you to take messy, disorganized data (tag soup) and recognize that it is actually a beautiful soup, because you have the ability to parse it efficiently and obtain organized information.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/Screenshot%202024-10-13%20at%207.07.36%20PM.png" class="img-fluid figure-img"></p>
+<figcaption>Snippet of text from the poem by Lewis Carroll, along with original illustration.</figcaption>
+</figure>
+</div>
+<p>We’re going to switch to some Python code chunks now. This will require loading the necessary Python libraries. If you haven’t already installed <code>BeautifulSoup</code>, you’ll need to uncomment and run the code in the following R code chunk first:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(reticulate)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co"># py_install("beautifulsoup4")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bs4 <span class="im">import</span> BeautifulSoup</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Note that I will set the following code chunk to not evaluate – why? Because I have already requested the content of the page we’re scraping above, and stored it to an .html file. Remember that we <strong>only want to request a page once</strong>, as a rule. Scrape politely!</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">'https://www.allsides.com/media-bias/media-bias-ratings'</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>r <span class="op">=</span> requests.get(url)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>soup <span class="op">=</span> BeautifulSoup(r.content, <span class="st">'html.parser'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Instead, we’ll load the .html file that was saved earlier:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>htmlfile <span class="op">=</span> <span class="bu">open</span>(<span class="st">"lab-3-data.html"</span>, <span class="st">"r"</span>) </span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Reading the file </span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>index <span class="op">=</span> htmlfile.read() </span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Creating a BeautifulSoup object and specifying the parser </span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>soup <span class="op">=</span> BeautifulSoup(index, <span class="st">'html.parser'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We’ll follow the same steps as we did with the data in R using <code>rvest</code>. First, we’ll pull out the rows in the table containing the information we want:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> soup.select(<span class="st">'tbody tr'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><code>tbody tr</code> tells the selector to extract all <code>&lt;tr&gt;</code> tags that are children of (inside of) the <code>&lt;tbody&gt;</code> tag.</p>
+<p>Then we’ll pull out the news source names. In Python, it might be easier to do this for the first row initially, and then progress to all the rows once we have the code figured out. For the first row, we can pull out the source name the same way we did in R; we can get the first row, select <code>.source-title</code>, and extract the text.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>row <span class="op">=</span> rows[<span class="dv">0</span>]</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>name <span class="op">=</span> row.select_one(<span class="st">'.source-title'</span>).text.strip()</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ABC News (Online)</code></pre>
+</div>
+</div>
+<p>For the news source link, it will be very similar; we add the <code>a</code>, select the <code>href</code> attribute, and attach the first part of the URL, “<a href="https://www.allsides.com" class="uri">https://www.allsides.com</a>”:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>allsides_page <span class="op">=</span> row.select_one(<span class="st">'.source-title a'</span>)[<span class="st">'href'</span>]</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>allsides_page <span class="op">=</span> <span class="st">'https://www.allsides.com'</span> <span class="op">+</span> allsides_page</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(allsides_page)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>https://www.allsides.com/news-source/abc-news-media-bias</code></pre>
+</div>
+</div>
+<p>For the bias information, we’ll again pull it out from the link URL:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>bias <span class="op">=</span> row.select_one(<span class="st">'.views-field-field-bias-image a'</span>)[<span class="st">'href'</span>]</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>bias <span class="op">=</span> bias.split(<span class="st">'/'</span>)[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(bias)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>left-center</code></pre>
+</div>
+</div>
+<p>We select the anchor tag by using the class name and tag together: <code>.views-field-field-bias-image</code> is the class of the <code>&lt;td&gt;</code> and <code>a</code> is for the anchor nested inside. We extract <code>href</code> like before, but now we only want the last part of the URL for the name of the bias, so we split on the slashes (<code>/</code>) and retain the last element of that split (here, <code>left-center</code>).</p>
+<p>Then the community feedback information:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>agree <span class="op">=</span> row.select_one(<span class="st">'.agree'</span>).text</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>agree <span class="op">=</span> <span class="bu">int</span>(agree)</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>disagree <span class="op">=</span> row.select_one(<span class="st">'.disagree'</span>).text</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>disagree <span class="op">=</span> <span class="bu">int</span>(disagree)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>agree_ratio <span class="op">=</span> agree <span class="op">/</span> disagree</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Agree: </span><span class="sc">{</span>agree<span class="sc">}</span><span class="ss">, Disagree: </span><span class="sc">{</span>disagree<span class="sc">}</span><span class="ss">, Ratio </span><span class="sc">{</span>agree_ratio<span class="sc">:.2f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Agree: 46837, Disagree: 23302, Ratio 2.01</code></pre>
+</div>
+</div>
+<p>Using <code>.text</code> returns a string, so we need to convert to integers – just like we used <code>as.numeric()</code> in R. On a side note – if you’ve never seen this way of formatting print statements in Python, the <code>f</code> at the front allows you to insert variables directly into the string using curly braces. The <code>:.2f</code> is a way to format a float to show only two decimal places.</p>
+<p>We can again see that extracting the “somewhat agree” text is going to be a little trickier:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(row.select_one(<span class="st">'.community-feedback-rating-page'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>None</code></pre>
+</div>
+</div>
+<p>And we’ll make a function to replicate their rules for calculating the text:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_agreeance_text(ratio):</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ratio <span class="op">&gt;</span> <span class="dv">3</span>: <span class="cf">return</span> <span class="st">"absolutely agrees"</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="dv">2</span> <span class="op">&lt;</span> ratio <span class="op">&lt;=</span> <span class="dv">3</span>: <span class="cf">return</span> <span class="st">"strongly agrees"</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="fl">1.5</span> <span class="op">&lt;</span> ratio <span class="op">&lt;=</span> <span class="dv">2</span>: <span class="cf">return</span> <span class="st">"agrees"</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="dv">1</span> <span class="op">&lt;</span> ratio <span class="op">&lt;=</span> <span class="fl">1.5</span>: <span class="cf">return</span> <span class="st">"somewhat agrees"</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> ratio <span class="op">==</span> <span class="dv">1</span>: <span class="cf">return</span> <span class="st">"neutral"</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="fl">0.67</span> <span class="op">&lt;</span> ratio <span class="op">&lt;</span> <span class="dv">1</span>: <span class="cf">return</span> <span class="st">"somewhat disagrees"</span></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="fl">0.5</span> <span class="op">&lt;</span> ratio <span class="op">&lt;=</span> <span class="fl">0.67</span>: <span class="cf">return</span> <span class="st">"disagrees"</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="fl">0.33</span> <span class="op">&lt;</span> ratio <span class="op">&lt;=</span> <span class="fl">0.5</span>: <span class="cf">return</span> <span class="st">"strongly disagrees"</span></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> ratio <span class="op">&lt;=</span> <span class="fl">0.33</span>: <span class="cf">return</span> <span class="st">"absolutely disagrees"</span></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>: <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(get_agreeance_text(<span class="dv">1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>neutral</code></pre>
+</div>
+</div>
+<p>Now that we have all the general code for a specific row, we can create a loop to extract data from every row on the page:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>data<span class="op">=</span> []</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> row <span class="kw">in</span> rows:</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> <span class="bu">dict</span>()</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>    d[<span class="st">'name'</span>] <span class="op">=</span> row.select_one(<span class="st">'.source-title'</span>).text.strip()</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>    d[<span class="st">'allsides_page'</span>] <span class="op">=</span> <span class="st">'https://www.allsides.com'</span> <span class="op">+</span> row.select_one(<span class="st">'.source-title a'</span>)[<span class="st">'href'</span>]</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>    d[<span class="st">'bias'</span>] <span class="op">=</span> row.select_one(<span class="st">'.views-field-field-bias-image a'</span>)[<span class="st">'href'</span>].split(<span class="st">'/'</span>)[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>    d[<span class="st">'agree'</span>] <span class="op">=</span> <span class="bu">int</span>(row.select_one(<span class="st">'.agree'</span>).text)</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>    d[<span class="st">'disagree'</span>] <span class="op">=</span> <span class="bu">int</span>(row.select_one(<span class="st">'.disagree'</span>).text)</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>    d[<span class="st">'agree_ratio'</span>] <span class="op">=</span> d[<span class="st">'agree'</span>] <span class="op">/</span> d[<span class="st">'disagree'</span>]</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>    d[<span class="st">'agreeance_text'</span>] <span class="op">=</span> get_agreeance_text(d[<span class="st">'agree_ratio'</span>])</span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>    data.append(d)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Our <code>data</code> list now contains a big JSON dictionary containing the key-value pairs of information for every row that we scraped:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(data[<span class="dv">0</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>{'name': 'ABC News (Online)', 'allsides_page': 'https://www.allsides.com/news-source/abc-news-media-bias', 'bias': 'left-center', 'agree': 46837, 'disagree': 23302, 'agree_ratio': 2.009999141704575, 'agreeance_text': 'strongly agrees'}</code></pre>
+</div>
+</div>
+<p>Again, this is only the first page. In a <strong>hypothetical example</strong> where there were multiple pages with organized URLs, you could run the following chunk of code to scrape <strong>three</strong> pages. Note that we <strong>import the <code>sleep</code></strong> <strong>function</strong>. This is to ensure that we wait 10 seconds between requests to the server, as they specify in their <code>robots.txt</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>pages <span class="op">=</span> [</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">'https://www.allsides.com/media-bias/media-bias-ratings'</span>,</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'https://www.allsides.com/media-bias/media-bias-ratings?page=1'</span>,</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'https://www.allsides.com/media-bias/media-bias-ratings?page=2'</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> time <span class="im">import</span> sleep</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>data<span class="op">=</span> []</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> page <span class="kw">in</span> pages:</span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>    r <span class="op">=</span> requests.get(page)</span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>    soup <span class="op">=</span> BeautifulSoup(r.content, <span class="st">'html.parser'</span>)</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>    rows <span class="op">=</span> soup.select(<span class="st">'tbody tr'</span>)</span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> row <span class="kw">in</span> rows:</span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> <span class="bu">dict</span>()</span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>        d[<span class="st">'name'</span>] <span class="op">=</span> row.select_one(<span class="st">'.source-title'</span>).text.strip()</span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a>        d[<span class="st">'allsides_page'</span>] <span class="op">=</span> <span class="st">'https://www.allsides.com'</span> <span class="op">+</span> row.select_one(<span class="st">'.source-title a'</span>)[<span class="st">'href'</span>]</span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a>        d[<span class="st">'bias'</span>] <span class="op">=</span> row.select_one(<span class="st">'.views-field-field-bias-image a'</span>)[<span class="st">'href'</span>].split(<span class="st">'/'</span>)[<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a>        d[<span class="st">'agree'</span>] <span class="op">=</span> <span class="bu">int</span>(row.select_one(<span class="st">'.agree'</span>).text)</span>
+<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a>        d[<span class="st">'disagree'</span>] <span class="op">=</span> <span class="bu">int</span>(row.select_one(<span class="st">'.disagree'</span>).text)</span>
+<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a>        d[<span class="st">'agree_ratio'</span>] <span class="op">=</span> d[<span class="st">'agree'</span>] <span class="op">/</span> d[<span class="st">'disagree'</span>]</span>
+<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a>        d[<span class="st">'agreeance_text'</span>] <span class="op">=</span> get_agreeance_text(d[<span class="st">'agree_ratio'</span>])</span>
+<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a>        data.append(d)</span>
+<span id="cb37-29"><a href="#cb37-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb37-30"><a href="#cb37-30" aria-hidden="true" tabindex="-1"></a>    sleep(<span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we can finally take our data, in JSON format, and use <code>pandas</code> to turn it into a data frame for easier use (just like we did in the API section):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.DataFrame(data)</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>df.set_index(<span class="st">'name'</span>, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>df.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                                 allsides_page  ...      agreeance_text
+name                                                                            ...                    
+ABC News (Online)            https://www.allsides.com/news-source/abc-news-...  ...     strongly agrees
+AlterNet                     https://www.allsides.com/news-source/alternet-...  ...   absolutely agrees
+Associated Press             https://www.allsides.com/news-source/associate...  ...     somewhat agrees
+Associated Press Fact Check  https://www.allsides.com/news-source/ap-fact-c...  ...  somewhat disagrees
+Axios                               https://www.allsides.com/news-source/axios  ...  somewhat disagrees
+
+[5 rows x 6 columns]</code></pre>
+</div>
+</div>
+<section id="exercises-1" class="level3">
+<h3 class="anchored" data-anchor-id="exercises-1">Exercises</h3>
+<ol start="6" type="1">
+<li>Study the following plot. What patterns do you notice? Pay attention to each line of code and see if you can figure out what each part does.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'total_votes'</span>] <span class="op">=</span> df[<span class="st">'agree'</span>] <span class="op">+</span> df[<span class="st">'disagree'</span>]</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>df3 <span class="op">=</span> df.copy()</span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">15</span>,<span class="dv">15</span>))</span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>biases <span class="op">=</span> df3[<span class="st">'bias'</span>].unique()</span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, bias <span class="kw">in</span> <span class="bu">enumerate</span>(biases):</span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>    temp_df <span class="op">=</span> df3[df3[<span class="st">'bias'</span>] <span class="op">==</span> bias].iloc[:<span class="dv">10</span>]</span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a>    temp_df.sort_index(inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a>    max_votes <span class="op">=</span> temp_df[<span class="st">'total_votes'</span>].<span class="bu">max</span>()</span>
+<span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> fig.add_subplot(<span class="dv">3</span>, <span class="dv">2</span>, i <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a>    ax.bar(temp_df.index, temp_df[<span class="st">'agree'</span>], color<span class="op">=</span><span class="st">'#5DAF83'</span>)</span>
+<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a>    ax.bar(temp_df.index, temp_df[<span class="st">'disagree'</span>], bottom<span class="op">=</span>temp_df[<span class="st">'agree'</span>], color<span class="op">=</span><span class="st">'#AF3B3B'</span>)</span>
+<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> x, y, ratio <span class="kw">in</span> <span class="bu">zip</span>(ax.get_xticks(), temp_df[<span class="st">'total_votes'</span>], temp_df[<span class="st">'agree_ratio'</span>]):</span>
+<span id="cb40-23"><a href="#cb40-23" aria-hidden="true" tabindex="-1"></a>        ax.text(x, y <span class="op">+</span> (<span class="fl">0.02</span> <span class="op">*</span> max_votes), <span class="ss">f"</span><span class="sc">{</span>ratio<span class="sc">:.2f}</span><span class="ss">"</span>, ha<span class="op">=</span><span class="st">'center'</span>)</span>
+<span id="cb40-24"><a href="#cb40-24" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb40-25"><a href="#cb40-25" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">'Total feedback'</span>)</span>
+<span id="cb40-26"><a href="#cb40-26" aria-hidden="true" tabindex="-1"></a>    ax.set_title(bias.title())</span>
+<span id="cb40-27"><a href="#cb40-27" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb40-28"><a href="#cb40-28" aria-hidden="true" tabindex="-1"></a>    ax.set_ylim(<span class="dv">0</span>, max_votes <span class="op">+</span> (<span class="fl">0.12</span> <span class="op">*</span> max_votes))</span>
+<span id="cb40-29"><a href="#cb40-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb40-30"><a href="#cb40-30" aria-hidden="true" tabindex="-1"></a>    plt.setp(ax.get_xticklabels(), rotation<span class="op">=</span><span class="dv">30</span>, ha<span class="op">=</span><span class="st">'right'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;BarContainer object of 10 artists&gt;
+&lt;BarContainer object of 10 artists&gt;
+Text(0, 72697.66, '2.01')
+Text(1, 75479.66, '1.23')
+Text(2, 20150.66, '0.81')
+Text(3, 23876.66, '0.90')
+Text(4, 46654.66, '0.79')
+Text(5, 19536.66, '0.78')
+Text(6, 40539.66, '1.51')
+Text(7, 130491.66, '1.14')
+Text(8, 37824.66, '1.04')
+Text(9, 88861.66, '0.77')
+Text(0, 0.5, 'Total feedback')
+Text(0.5, 1.0, 'Left-Center')
+(0.0, 143284.96)
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+&lt;BarContainer object of 10 artists&gt;
+&lt;BarContainer object of 10 artists&gt;
+Text(0, 23135.16, '3.97')
+Text(1, 41896.16, '2.90')
+Text(2, 32833.16, '3.21')
+Text(3, 22087.16, '4.01')
+Text(4, 65594.16, '1.72')
+Text(5, 37527.16, '3.79')
+Text(6, 23064.16, '5.83')
+Text(7, 33322.16, '3.04')
+Text(8, 18270.16, '2.68')
+Text(9, 30850.16, '1.78')
+Text(0, 0.5, 'Total feedback')
+Text(0.5, 1.0, 'Left')
+(0.0, 72024.96)
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+&lt;BarContainer object of 8 artists&gt;
+&lt;BarContainer object of 8 artists&gt;
+Text(0, 73238.04, '1.11')
+Text(1, 42392.04, '0.82')
+Text(2, 31460.04, '1.39')
+Text(3, 7273.04, '1.04')
+Text(4, 24157.04, '0.53')
+Text(5, 20133.04, '1.49')
+Text(6, 44629.04, '1.55')
+Text(7, 55984.04, '0.71')
+Text(0, 0.5, 'Total feedback')
+Text(0.5, 1.0, 'Center')
+(0.0, 80418.24)
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+&lt;BarContainer object of 10 artists&gt;
+&lt;BarContainer object of 10 artists&gt;
+Text(0, 64062.92, '3.60')
+Text(1, 29649.92, '1.87')
+Text(2, 52337.92, '4.22')
+Text(3, 124953.92, '1.06')
+Text(4, 7758.92, '1.39')
+Text(5, 33437.92, '1.16')
+Text(6, 6138.92, '3.10')
+Text(7, 23199.92, '2.65')
+Text(8, 234085.92, '1.36')
+Text(9, 22225.92, '2.38')
+Text(0, 0.5, 'Total feedback')
+Text(0.5, 1.0, 'Right')
+(0.0, 257035.52)
+[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+&lt;BarContainer object of 3 artists&gt;
+&lt;BarContainer object of 3 artists&gt;
+Text(0, 37194.3, '2.23')
+Text(1, 34442.3, '1.80')
+Text(2, 28242.3, '1.55')
+Text(0, 0.5, 'Total feedback')
+Text(0.5, 1.0, 'Right-Center')
+(0.0, 40840.8)
+[None, None, None, None, None, None]</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>plt.tight_layout(w_pad<span class="op">=</span><span class="fl">3.0</span>, h_pad<span class="op">=</span><span class="fl">1.0</span>)</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="lab-3_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="1440"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>This lab has referenced the following:</p>
+<ul>
+<li><p><a href="https://realpython.com/beautiful-soup-web-scraper-python/">Beautiful Soup: Build a Web Scraper With Python</a></p></li>
+<li><p><a href="https://r4ds.hadley.nz/webscraping">Chapter 24: Web Scraping</a></p></li>
+<li><p><a href="https://www.learndatasci.com/tutorials/ultimate-guide-web-scraping-w-python-requests-and-beautifulsoup/">Ultimate Guide to Web Scraping With Python</a></p></li>
+</ul>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
