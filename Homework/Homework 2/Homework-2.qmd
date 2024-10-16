@@ -13,21 +13,9 @@ In this section, you will gain more practice working with public APIs, this time
 
 #### Exercise 1
 
-Use the <http://api.weatherapi.com/v1/current.json> URL to access the API and obtain real-time weather data. Note that you will want to specify three query parameters, at least – `key`, which should be set to your individual API key, `q`, which should equal the latitude and longitude of a specified location – for example `q = "34.432961, -119.856870"` – and `aqi`, which indicates whether you want to obtain air quality data (`"yes"` or `"no"`).
+Use the <http://api.weatherapi.com/v1/current.json> URL to access the API and obtain real-time weather data. Note that you will want to specify three query parameters, at least – `key`, which should be set to your individual API key, `q`, which should equal the city name of a specified location – for example `q = "Isla Vista"` – and `aqi`, which indicates whether you want to obtain air quality data (`"yes"` or `"no"`).
 
-Obtain current real-time weather data for **fifty randomly-selected locations**. You should use the following code to select fifty locations:
-
-```{r}
-set.seed(3435)
-longitude <- round(runif(n = 50, min = -100, max = 100), 
-                   digits = 6)
-latitude <- round(runif(n = 50, min = -90, max = 90), 
-                   digits = 6)
-```
-
-*Note: This works by randomly generating pairs of latitude and longitude values. For `longitude`, we generate 50 random draws from a uniform distribution with a lower bound of* $-100$ *and an upper bound of* $100$*, then round these values to the **sixth** decimal place. For `latitude`, we follow the same procedure, but change the lower bound to* $-90$ *and the upper bound to* $90$*.*
-
-**Make** **sure** to set the correct seed before running this code. Verify that the mean of these latitude values is `7.177744` and the mean of these longitude values is `3.127516`. This ensures that you are all working with the same locations (although your results will still differ, depending on when you obtain the data).
+Obtain current real-time weather data for **fifty randomly-selected cities**. I have saved a data file containing the names of fifty cities to `/data/cities.csv`. This ensures that you are all working with the same locations (although your results will still differ, depending on when you obtain the data).
 
 #### Exercise 2
 
