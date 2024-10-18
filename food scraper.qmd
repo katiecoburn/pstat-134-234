@@ -1,0 +1,111 @@
+---
+title: "web scraping a recipe blog"
+format: html
+editor: visual
+---
+
+## Web scraping a recipe blog in R
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(httr)
+# install.packages("polite")
+library(polite)
+```
+
+```{r}
+food_recipes_bow <- bow(
+  url = "https://www.gonnawantseconds.com/",
+  user_agent = "Dr Coburn",
+  force = TRUE
+)
+print(food_recipes_bow)
+
+session <- nod(bow = food_recipes_bow,
+               path = "recipes/")
+
+scraped_page <- scrape(session)
+
+extract_links <- scraped_page %>%
+  html_elements(".el-r1bji") %>%
+  html_elements(".el-wzwv8q") %>%
+  html_elements("a") %>%
+  html_attr("href")
+
+get_links <- function(page, bow = food_recipes_bow){
+  # Update session
+  session <- nod(
+    bow = food_recipes_bow,
+    path = paste0("recipes/?fwp_paged=", page)
+  )
+  scraped_page <- scrape(session)
+  
+  links <- scraped_page %>% 
+    html_elements(".fwpl-col") %>% 
+    html_elements(".el-wzwv8q") %>% 
+    html_elements("a") %>% 
+    html_attr("href")
+  return(links)
+}
+pages <- seq(1, 15)
+extract_links <- map(pages, get_links) %>% unlist()
+
+get_recipes <- function(link, bow = food_recipes_bow){
+  # Get the last part of the link
+  recipe <- str_split(link, "/")[[1]][[4]]
+  
+  # Agree modification of path
+  session <- nod(
+    bow = food_recipes_bow,
+    path = paste0(recipe, "/")
+  )
+  
+  # Scrape recipe page
+  scraped_recipe <- scrape(session)
+  extract_name <- scraped_recipe %>% 
+    html_elements(".entry-title") %>% 
+    html_text2()
+  extract_ingredients <- scraped_recipe %>% 
+    html_elements(".wprm-recipe-ingredient-name") %>% 
+    html_text2()
+  extract_total_time <- scraped_recipe %>% 
+    html_elements(".wprm-recipe-total_time") %>% 
+    html_text2()
+  if(length(extract_total_time) == 2){
+      total_hours <- extract_total_time[str_detect(extract_total_time, "hour")=='TRUE'] %>% 
+    parse_number()
+      total_minutes <- extract_total_time[str_detect(extract_total_time, "hour")=='FALSE'] %>% 
+    parse_number()
+      total_time <- total_hours * 60 + total_minutes
+  } else {
+    total_time = extract_total_time %>% parse_number()
+  }
+  extract_servings <- scraped_recipe %>% 
+    html_elements(".wprm-recipe-servings") %>% 
+    html_text2() %>% 
+    as.numeric()
+  extract_calories <- scraped_recipe %>% 
+    html_elements(".wprm-nutrition-label-text-nutrition-container-calories") %>% 
+    html_text2() %>% 
+    parse_number()
+  
+  results <- tibble(
+    name = extract_name,
+    ingredients = list(extract_ingredients),
+    total_time = total_time,
+    servings = extract_servings,
+    calories = extract_calories
+  )
+  return(results)
+}
+
+data <- map_dfr(extract_links, get_recipes)
+
+write_csv(data, file = "food-scraping-data.csv")
+
+data %>% ggplot(aes(x = calories)) + geom_histogram()
+data %>% arrange(desc(calories))
+data %>% ggplot(aes(x = total_time)) + geom_histogram()
+data %>% filter(total_time > 600)
+```

@@ -289,7 +289,7 @@ If you are wanting to use Python to build your web scraper, there's no library I
 
 `BeautifulSoup` was created in 2004. Its name is meant to be a reference to both the term "tag soup," which refers to poorly-organized HTML code, and the poem "Beautiful Soup," from [Alice in Wonderland]{.underline}. The implication is that this Python library enables you to take messy, disorganized data (tag soup) and recognize that it is actually a beautiful soup, because you have the ability to parse it efficiently and obtain organized information.
 
-![Snippet of text from the poem by Lewis Carroll, along with original illustration.](images/Screenshot 2024-10-13 at 7.07.36 PM.png)
+![Snippet of text from the poem by Lewis Carroll, along with original illustration.](images/Screenshot%202024-10-13%20at%207.07.36%20PM.png)
 
 We're going to switch to some Python code chunks now. This will require loading the necessary Python libraries. If you haven't already installed `BeautifulSoup`, you'll need to uncomment and run the code in the following R code chunk first:
 
