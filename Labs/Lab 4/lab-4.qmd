@@ -1,0 +1,505 @@
+---
+title: "Lab 4"
+author: "PSTAT 134/234"
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 4
+editor: visual
+---
+
+## Lab 4: Data Cleaning
+
+The `/data` folder contains a data set that we'll work with for this lab. It comes from the survey at this link: <https://www.askamanager.org/2021/04/how-much-money-do-you-make-4.html>
+
+The survey is intended to collect information about managerial salaries, along with other demographic information such as race, gender, and location; it's hosted on the website AskAManager.org. It's US-centric (most of the respondents are located in the US), although it does allow for a range of country inputs. Salary surveys are inherently interesting (and certainly applicable to college students), but in addition, this is a great example of messy data to work with for several reasons:
+
+1.  There are 17 variables – a wide range, but also not so large as to be overwhelming;
+2.  There are a huge number of observations (over 25,000);
+3.  6 of the variables are free-form text entry (users can write in whatever they like), which always results in needing a lot of data cleaning;
+4.  All the variables make intuitive sense, so you don't necessarily need a lot of domain knowledge to understand them, but;
+5.  You can apply some domain expertise to areas of the data you're familiar with (be it country, state, job title, or industry sector);
+6.  The data set is live and constantly growing, so a cleaning script that works for earlier entries may not hold for all new entries.
+
+Here is a screenshot of the first few rows of the data table in Google Sheets:
+
+![](images/Screenshot%202024-10-19%20at%204.58.20%20PM.png)
+
+The code for data cleaning in this lab is written in R, using the `tidyverse`. Personally, I find that cleaning data tends to be easier to do in R; you can then import your cleaned data to Python to create any visualizations or conduct any further analyses you like. If you prefer to clean data in Python, however, you can.
+
+Let's start by loading relevant packages and reading in the data.
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(kableExtra)
+
+salarydata <- read_csv("data/salarydata.csv")
+head(salarydata)
+```
+
+One thing that may stand out right away is the column names. Because this data comes directly from a Google form, the column names are the text of the questions that they correspond to. That means that rather than typing `salarydata$salary`, for example, if you wanted to select the column of answers to "What is your annual salary?" you'd need to type:
+
+```{r}
+salarydata$`What is your annual salary? (You'll indicate the currency in a later question. If you are part-time or hourly, please enter an annualized equivalent -- what you would earn if you worked the job 40 hours a week, 52 weeks a year.)` %>% 
+  head()
+```
+
+So the first step that we should probably take with regard to data cleaning is to rename all the columns.
+
+By [reading through the survey](https://www.askamanager.org/2021/04/how-much-money-do-you-make-4.html), you can see that the questions are as follows:
+
+1.  How old are you?
+2.  What industry do you work in?
+3.  Job title
+4.  If your job title needs additional context
+5.  What is your annual salary?
+6.  How much additional monetary compensation do you get
+7.  Please indicate the currency
+8.  If "Other," please indicate the currency
+9.  If your income needs additional context
+10. What country do you work in?
+11. If in the US, what state do you work in?
+12. What city do you work in?
+13. How many years of professional work experience?
+14. How many years of experience in your field?
+15. Highest level of education?
+16. What is your gender?
+17. What is your race?
+
+So it might make sense to rename the columns as follows:
+
+```{r}
+names(salarydata) <- c("timestamp", "age", "industry", "title",
+                   "title_b", "salary", "bonuses", "currency",
+                   "currency_b", "salary_b", "country",
+                   "us_state", "city", "exp", "spec_exp",
+                   "educ","gender", "race")
+```
+
+### Cleaning Salary
+
+First, let's consider the variable `salary`. We might wonder what, for example, the average manager's salary is, or what the distribution of salary looks like; is it relatively normally distributed? Skewed in one direction or another? Is its variance large or small? If you have experience working with salary data, you might expect it to be positively skewed. (It usually is – and it is in this case as well.)
+
+```{r}
+salarydata %>% 
+  ggplot(aes(x = salary)) + geom_histogram()
+```
+
+Well then. That's about as positively skewed as it gets. It also seems a bit extreme; $6$ x $10^9$ is a **very** large value. Let's see if we can determine what the largest values of `salary` are:
+
+```{r}
+salarydata %>% 
+  arrange(desc(salary)) %>% 
+  head() %>% 
+  kbl() %>%
+  scroll_box(width = "1000px", height = "1000px")
+```
+
+The very largest value of salary seems suspiciously large. The next few might remind us of something; not all of this salary information is specified in US dollars – in fact, quite a bit of it isn't. It probably doesn't make logical sense to talk about the distribution of salary measured in many different currencies at the same time. We should start by creating a new variable that represents salary **in one common currency**. I'll use US dollars.
+
+Since the `currency` variable tells us what currency their salary was specified in, we can use that to determine the exchange rate. If salary was provided in Canadian currency (`CAD`) for example, to convert the value to `USD` we should multiply by $0.72$, and so on. (You might notice that this survey provided an option for `AUD/NZD`, combining the two currencies into one group, even though they have slightly different exchange rates – $0.67$ vs. $0.61$. We'll use $0.67$.)
+
+We can use `case_when` to do this:
+
+```{r}
+salarydata <- salarydata %>% 
+  mutate(salary_in_usd = case_when(
+    currency == "USD" ~ salary,
+    currency == "AUD/NZD" ~ salary*0.67,
+    currency == "CAD" ~ salary*0.72,
+    currency == "CHF" ~ salary*1.16,
+    currency == "EUR" ~ salary*1.09,
+    currency == "GBP" ~ salary*1.31,
+    currency == "HKD" ~ salary*0.13,
+    currency == "JPY" ~ salary*0.0067,
+    currency == "SEK" ~ salary*0.095,
+    currency == "ZAR" ~ salary*0.057
+  ))
+salarydata %>% 
+  head()
+```
+
+We know how many possible values for `currency` there are because that survey question was a drop-down. However, there is an `Other` option; this means that we also need to consider the values in `currency_b`, at least for the cases when `currency == "Other"`.
+
+```{r}
+salarydata %>% 
+  filter(currency == "Other") %>% 
+  select(salary_in_usd, currency, currency_b, everything()) %>% 
+  head() %>% 
+  kbl() %>%
+  scroll_box(width = "1000px", height = "1000px")
+```
+
+You can probably already see how complicated and time-consuming cleaning data can get, especially when you're working with text-entry survey data. Not only are there values here that are not currencies – "BR\$" is not a currency – there are even "USD" values, meaning that some people who specified "Other" currency actually reported their salary in US dollars to begin with. If you click through a few sets of rows, you'll see other values, like "American Dollars," or the person who simply wrote, "Equity" (whatever that means).
+
+There are only $161$ rows (out of $28,085$) that specified "Other" for currency. This is
+
+```{r}
+161/28085
+```
+
+approximately $0.57 \%$ of the data. Rather than banging our head against the proverbial wall attempting to decipher these $161$ values, we might decide to remove them from the data set entirely. Of course, any time we remove observations from our data, we are running the risk of potentially biasing the data that remains; our data set now will only consist of users who did not specify "Other" for currency. However, since this is self-report survey data that literally anyone on the Internet could enter, we could not really use this data set to draw conclusions about causal relationships anyway, so we can probably drop these observations safely.
+
+```{r}
+salarydata <- salarydata %>% 
+  filter(currency != "Other")
+```
+
+Then we can look at the largest values of salary in USD:
+
+```{r}
+salarydata %>% 
+  arrange(desc(salary_in_usd)) %>% 
+  head() %>% 
+  kbl() %>%
+  scroll_box(width = "1000px", height = "1000px")
+```
+
+They are still very large – up to $10,000,000$. (And that one is most likely a troll, considering their title is listed as "supreme bum.") Let's see how many observations have listed salaries of $750,000$ annually or more:
+
+```{r}
+salarydata %>% 
+  filter(salary_in_usd >= 750000)
+```
+
+Only 37 rows. And while it's certainly possible that these are (mostly) legitimate, we can safely feel justified in dropping them. While we're at it, let's see how many people reported an annual salary of below $10,000$:
+
+```{r}
+salarydata %>% 
+  arrange(salary_in_usd) %>% 
+  filter(salary_in_usd < 10000)
+```
+
+$154$ rows. And again, these may be legitimate, or they may have been mistakes in data entry – writing $58$, for example, instead of $58,000$ – but it is probably a good idea to exclude them from analysis as well. There are people who are making a salary of $0$, which is valid for people who are unemployed, but since this is meant to be a survey of the salary for individuals in managerial positions, we should probably exclude those values. We'll also drop the original `salary` variable and `currency_b` (since we won't need to use them any more).
+
+```{r}
+salarydata <- salarydata %>% 
+  filter(salary_in_usd > 10000 & salary_in_usd < 750000) %>% 
+  select(-(c(salary, currency_b)))
+```
+
+Now that we've cleaned `salary` up a bit, we can look at it again:
+
+```{r}
+salarydata %>% 
+  ggplot(aes(x = salary_in_usd)) + 
+  geom_histogram() +
+  labs(x = "Annual Salary in USD", y = "Count")
+```
+
+We can also calculate the summary statistics:
+
+```{r}
+summary(salarydata$salary_in_usd)
+```
+
+#### Exercises
+
+1.  Remember that we also have information on any monetary bonuses people receive (in the column `bonuses`). Clean up this variable. Decide how to handle any missing values.
+2.  Create a new variable that represents total income in USD (the sum of salary plus any bonuses). Make a histogram of this variable. Calculate summary statistics for this variable.
+
+### Cleaning Country
+
+Another thing we might wonder is, "Does the average managerial salary differ across countries?" For example, do people in the US earn more or less than people in the UK (United Kingdom)?
+
+Luckily, we have a variable that can help us answer this question – `country`. Unluckily, it is a free-text entry variable, meaning users could enter whatever text they liked, which means we will have our work cut out for us:
+
+```{r}
+salarydata %>% 
+  ggplot(aes(x = country)) +
+  geom_bar()
+```
+
+How many different values have been entered for `country`? We can find out:
+
+```{r}
+salarydata %>% select(country) %>% table() %>% length()
+```
+
+$287$ different values. While we might think those are all different countries, I suspect that is not the case:
+
+```{r}
+salarydata %>% 
+  select(country) %>% 
+  table() %>% 
+  kbl() %>%
+  scroll_box(width = "300px", height = "400px")
+```
+
+Right. You can see that, for example, four people have entered the American flag emoji. There are countless variations of USA, ranging from "UNITED STATES" to "Uniter Statez," and that's not even looking at the UK or Canada yet. There's also someone who just entered "Y."
+
+(This is part of why it can be challenging to analyze data if you set up a self-report survey with free-text questions.)
+
+We could take several different approaches here. We might notice that the count of respondents is very low for those misspellings, etc. – for example, if we arrange in descending order:
+
+```{r}
+salarydata %>% 
+  group_by(country) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  kbl() %>%
+  scroll_box(width = "300px", height = "400px")
+```
+
+We can now really see why this survey was described as being US-centric (although there are still at minimum $2,000$ respondents from Canada and the UK combined). 6 of the top 10 values are some variation of the US. So one approach we could take here would be to choose to restrict our analysis to only those respondents who work in the US. If we wanted to make cleaning even **easier**, we could restrict our analysis to only those who work in the US and entered their country name as "United States," "USA," or "US."
+
+While that might be the easiest option, we would lose a good chunk of observations by doing so, and we would no longer be able to look at how the distribution of things like salary change across countries.
+
+We could also use some form of [fuzzy matching](https://cran.r-project.org/web/packages/fedmatch/vignettes/Fuzzy-matching.html) to try and recode all the misspellings of United States as US, all the misspellings of United Kingdom as UK, and so on and so forth. However, fuzzy matching is an algorithm; it doesn't always work perfectly, and it would not, for example, pick up on the fact that Northern Ireland, England, Scotland, and Wales should all be recoded as "United Kingdom."
+
+Let's try and settle on a middle ground, of sorts. We'll recode most of the misspellings manually, using `case_when` and `%in%`:
+
+```{r}
+us <- c("United States", "USA", "US", "U.S.", "Usa",
+        "United States of America", "United states",
+        "united states", "usa", "🇺🇸", "US of A",
+        "U.SA", "U.s.a.", "U. S", "United State of America",
+        "United States Of America", "UnitedStates",
+        "united States", "United states of America",
+        "United Sates", "UNITED STATES", "United States of america",
+        "United Stated", "Unites States", "U.S.A", "United State",
+        "U.S", "America", "U.S.A.", "Us", "us", "The United States",
+        "U. S.", "U.s.", "United Stares", "United Statea",
+        "Unites states", "The US", "Unite States", "United Sates of America",
+        "United States of American", "United Status", "u.s.",
+        "U.S>", "Uniited States", "United  States", "United STates",
+        "United Stateds", "United Statees", "United States is America",
+        "United States of Americas", "United Statesp", "United Statss",
+        "United Stattes", "United Statues", "United Statws",
+        "United Sttes", "United states of america", "United statew",
+        "uS", "uSA", "united stated", "united states of america",
+        "america", "UsA", "Untied States", "Unted States", "Uniyes States",
+        "Unitied States", "San Francisco", "California")
+uk <- c("United Kingdom", "UK", "England, UK", "uk", "U.K.", "Uk",
+        "United Kindom", "United Kingdom.", "United Kingdomk",
+        "UK (Northern Ireland)", "U.K", "U.K. (northern England)",
+        "England/UK", "England, UK.", "United Kingdom (England)",
+        "UK (England)", "Scotland, UK", "United kingdom", "united kingdom",
+        "England, United Kingdom", "Wales (UK)", "Wales (United Kingdom)",
+        "Wales, UK", "England", "Scotland", "Wales", "Northern Ireland",
+        "Northern Ireland, United Kingdom", "Great Britain")
+canada <- c("Canada", "canada", "CANADA", "Canda", "Canad", 
+            "Canada, Ottawa, ontario", "Canadw")
+netherlands <- c("Netherlands", "The Netherlands", "netherlands",
+                 "The netherlands", "Nederland", "the Netherlands",
+                 "the netherlands")
+new_zealand <- c("New Zealand", "NZ", "New zealand", "new zealand")
+
+salarydata <- salarydata %>% 
+  mutate(country_new = case_when(
+    country %in% us ~ "USA",
+    country %in% uk ~ "UK",
+    country %in% canada ~ "Canada",
+    country %in% netherlands ~ "Netherlands",
+    country %in% new_zealand ~ "New Zealand",
+    .default = country
+  ))
+salarydata %>% 
+  group_by(country_new) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  kbl() %>%
+  scroll_box(width = "300px", height = "400px")
+```
+
+Now we've handled most of these problems. We still have a fair number of values – $175$ – and many of them have 10 or fewer counts, however. We could try and continue recoding them to collapse levels further, or we could create an "other" level, or we could drop them entirely. Since our data set is so large, I'll drop them entirely:
+
+```{r}
+salarydata <- salarydata %>% 
+  group_by(country_new) %>% 
+  add_count() %>% 
+  filter(n > 10) %>% 
+  select(-c(country, n)) %>% 
+  ungroup()
+```
+
+If we look at a table of counts now, we only have 18 countries, none with counts below 10:
+
+```{r}
+salarydata %>% 
+  group_by(country_new) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  kbl() %>%
+  scroll_box(width = "300px", height = "400px")
+```
+
+And we can actually make a legible bar chart of the `country` variable:
+
+```{r}
+salarydata %>% 
+  ggplot(aes(y = fct_infreq(country_new))) +
+  geom_bar() +
+  labs(x = "Count", y = "Country")
+```
+
+We might, however, be more interested in seeing how the average salary (in USD) varies across countries:
+
+```{r}
+salarydata %>% 
+  ggplot(aes(y = reorder(country_new, salary_in_usd), x = salary_in_usd)) +
+  geom_bar(stat = "summary", fun = "mean") + 
+  labs(x = "Mean Annual Salary (USD)", y = "Country")
+```
+
+#### Exercises
+
+3.  Why are there $130$ levels of `us_state` and not $50$?
+4.  What are some approaches you could take to clean up the variable `us_state`? What are some pros and cons of each approach?
+
+### Cleaning Gender
+
+Let's go on and take a look at the distribution of `gender`:
+
+```{r}
+salarydata %>% 
+  ggplot(aes(y = gender)) + geom_bar()
+```
+
+This variable specified only a few possible options, so it won't require as much cleaning. However, notice that there are three different values that all essentially represent "No gender specified" – `Other or prefer not to answer`, `Prefer not to answer`, and `NA` (meaning that the respondent simply left the question blank). Let's clean that up:
+
+```{r}
+salarydata <- salarydata %>% 
+  mutate(gender = case_when(
+    gender == "Prefer not to answer" ~ "Other or prefer not to answer",
+    is.na(gender) ~ "Other or prefer not to answer",
+    .default = gender
+  ))
+
+salarydata %>% 
+  ggplot(aes(y = fct_infreq(gender))) + geom_bar() +
+  labs(x = "Count", y = "Gender")
+```
+
+Interestingly, the vast majority of respondents to this survey are women. Out of curiosity, I went and explored the website to try and determine why that might be. The [author of the blog](https://www.askamanager.org/about) is female, and the logo for the blog also features a feminine person, so it seems that most readers of the blog identify as women. This is not a random sample of managers, of course; it is only a sample of the people who came across this blog page and decided to fill out the survey, so it is not representative of the entire population of managers in the universe.
+
+We might be interested in how the distribution of salary varies across gender:
+
+```{r}
+salarydata %>% 
+  ggplot(aes(y = reorder(gender, salary_in_usd,
+                         FUN = median), 
+             x = salary_in_usd)) +
+  geom_boxplot() + 
+  labs(x = "Annual Salary (USD)", y = "Gender")
+```
+
+### Cleaning Education
+
+Highest education level attained is another variable that doesn't require much cleaning to work with:
+
+```{r}
+salarydata %>% 
+  ggplot(aes(y = fct_infreq(educ))) + geom_bar()
+```
+
+It does have some missing values, however. We could try to impute those, but if you look through some of the comments on the survey, a number of respondents point out that certain degrees (like law degrees) are missing from the options. It makes sense to assume that people with degrees not listed may have chosen not to fill out the question. Therefore, it might make more sense to recode any missing values as "Other."
+
+```{r}
+salarydata <- salarydata %>% 
+  mutate(educ = case_when(
+    is.na(educ) ~ "Other",
+    .default = educ
+  ))
+```
+
+#### Exercises
+
+5.  Create a box plot of education level vs. salary in USD. What do you notice?
+
+### Cleaning Industry
+
+From the survey questions, we might think that there will only be a certain number of possible values for `industry`; there was a list of possibilities, right? But:
+
+```{r}
+salarydata %>% 
+  ggplot(aes(y = industry)) +
+  geom_bar()
+```
+
+Clearly not! What is happening here? If we look at the survey again, we notice that the question "What industry do you work in?" allowed users to specify multiple options **and** had an "Other" option that allowed users to write in their industry.
+
+```{r}
+salarydata %>% 
+  group_by(industry) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  kbl() %>%
+  scroll_box(width = "300px", height = "400px")
+```
+
+There are over $1,100$ different values of `industry`. So what do we do? Well, again we have several options. We could (1) collapse all the levels with a count below a certain value into an "Other" category, (2) drop all observations in the less frequent levels, (3) manually re-code the levels, or (4) try and use an algorithm to re-code the levels.
+
+We could try using an algorithm to re-code the levels. Below, we use fuzzy joining, via the `fuzzyjoin` package:
+
+```{r}
+library(fuzzyjoin)
+df <- salarydata
+column <- "industry"
+unique_levels <- unique(as.character(df[[column]]))
+levels_df <- data.frame(level = unique_levels) %>% drop_na()
+
+threshold <- 0.4
+matched <- stringdist_inner_join(levels_df, levels_df, by = "level", 
+                                  method = "jw", max_dist = threshold, 
+                                  ignore_case = TRUE)
+  
+mapping <- matched %>%
+  group_by(level.x) %>%
+  summarise(level = first(level.y), .groups = 'drop') %>%
+  distinct()
+
+df[[column]] <- factor(mapping$level[match(as.character(df[[column]]), mapping$level.x)])
+
+df %>% 
+  group_by(industry) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  kbl() %>%
+  scroll_box(width = "300px", height = "400px")
+```
+
+My primary concern with this would be the fact that the count of observations in `Education (Higher Education)`, for example, has gone from $2,433$ to more than a whopping $13,000$. Without looking at some of the individual observations, it's difficult to be reasonably confident that this algorithm has lumped the correct levels together. (It may be that a threshold of $0.4$ is too flexible, combining levels that are not sufficiently similar; but the trade-off is retaining a larger number of levels, which is not necessarily better.)
+
+What I would probably recommend doing instead is this:
+
+```{r}
+salarydata <- salarydata %>% 
+  mutate(industry = fct_lump(industry, n = 40)) %>% 
+  group_by(industry) %>% 
+  add_count() %>% 
+  filter(n > 100) %>% 
+  ungroup()
+
+salarydata %>% 
+  group_by(industry) %>% 
+  count() %>% 
+  arrange(desc(n)) %>% 
+  kbl() %>%
+  scroll_box(width = "300px", height = "400px")
+```
+
+What did we do there? We used `fct_lump` to combine all levels of `industry` with fewer than $40$ observations into an `Other` category. We then dropped any levels with a count less than $100$. This has retained about $25$ levels of `industry`, a much more workable number. We can look at a bar chart:
+
+```{r}
+salarydata %>% 
+  ggplot(aes(y = fct_infreq(industry))) +
+  geom_bar()
+```
+
+And we can also look at the average salary in USD by industry:
+
+```{r}
+salarydata %>% 
+  ggplot(aes(y = reorder(industry, salary_in_usd), x = salary_in_usd)) +
+  geom_bar(stat = "summary", fun = "mean") + 
+  labs(x = "Mean Annual Salary (USD)", y = "Industry Type")
+```
+
+#### Exercises
+
+6.  Take a look at the `title` variable. How many different values are there?
+7.  Brainstorm some ways you could try and clean up this variable.
+8.  Retain only the top 50 most common levels of `title`. Create a bar chart of the average salary for these most common titles.
+9.  What is the average salary for those respondents who said their title was "Data Scientist"?
