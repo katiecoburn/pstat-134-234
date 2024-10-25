@@ -93,7 +93,7 @@ When we are looking just at those users who click at least once, the click-throu
 
 4.  Explore the data and make visual and quantitative comparisons across user segments/demographics to answer the following:
     -   How do \<18 year old males differ from \<18 year old females in terms of clicks and impressions?
-    
+
 ```{r, message=FALSE, warning=FALSE}
 nyt_day1 %>% 
   filter(age_group == "less than 18") %>% 
@@ -101,9 +101,9 @@ nyt_day1 %>%
   ggplot(aes(x = clicks, y = gender)) +
   geom_violin()
 ```
-  
-  A box plot or violin plot would work best for this question. There is really not much, if any, difference.
-  
+
+A box plot or violin plot would work best for this question. There is really not much, if any, difference.
+
 ```{r, message=FALSE, warning=FALSE}
 nyt_day1 %>% 
   filter(age_group == "less than 18") %>% 
@@ -111,29 +111,33 @@ nyt_day1 %>%
   ggplot(aes(x = impressions, y = gender)) +
   geom_violin()
 ```
-    
-  Again a box plot or violin plot would work best for this question. There is really not much, if any, difference.
-      
-    -   How does the distribution of click-through rate for users who are signed in differ from the distribution for those who are **not** signed in?
-    
+
+Again a box plot or violin plot would work best for this question. There is really not much, if any, difference.
+
+```         
+-   How does the distribution of click-through rate for users who are signed in differ from the distribution for those who are **not** signed in?
+```
+
 ```{r, message=FALSE, warning=FALSE}
 nyt_day1 %>% 
   mutate(signed_in = factor(signed_in)) %>% 
   ggplot(aes(x = click_through_rate, y = signed_in)) +
   geom_violin()
 ```
-    
-  There is really not much, if any, difference.
 
-    -   Are certain age groups more likely to be signed in than others? Which ones?
-    
+There is really not much, if any, difference.
+
+```         
+-   Are certain age groups more likely to be signed in than others? Which ones?
+```
+
 ```{r, message=FALSE, warning=FALSE}
 nyt_day1 %>% 
   mutate(signed_in = factor(signed_in)) %>% 
   ggplot(aes(x = age_group,
              fill = signed_in)) + geom_bar()
 ```
-    
+
 Part of the goal of this question is to hint at the fact that we do not have age data for signed-out users -- all their ages are listed as $0$. If students don't recognize this, they will likely (incorrectly) say that "all the signed-out users are under 18."
 
 5.  Calculate summary statistics for the click-through rate. These should include (1) quartiles, (2) mean, (3) median, (4) minimum and maximum, and (5) variance. Choose two user segments to compare these statistics across (for example, compare the mean, median, and quartiles for users 25-34 to those for users 65+).
@@ -191,7 +195,7 @@ tibble("Statistic" = c("Minimum", "1st Quartile",
 
 6.  Summarize your findings in a brief (1-2 paragraph) report intended for a New York Times (NYT) advertising team.
 
-Answers may vary. An ideal report might mention the following: It's difficult to learn much information about the users who are not signed in, because we don't have their demographic details (age or gender). About 29.91\% of users are not signed in. Of those who are signed in, age follows a somewhat normal distribution, with a small number of users less than 18 and over 65, and the majority of users more middle-aged, between 35 and 54. In terms of gender, of users who are signed in, about 63\% are female. Overall, the distributions of clicks, impressions, and click-through rates are heavily positively skewed, indicating that a vast majority of users, regardless of demographics, are not clicking on ads, etc, although some users click as many as 4 times. It might be worth further investigating what variables drive some users to click or engage and not others.
+Answers may vary. An ideal report might mention the following: It's difficult to learn much information about the users who are not signed in, because we don't have their demographic details (age or gender). About 29.91% of users are not signed in. Of those who are signed in, age follows a somewhat normal distribution, with a small number of users less than 18 and over 65, and the majority of users more middle-aged, between 35 and 54. In terms of gender, of users who are signed in, about 63% are female. Overall, the distributions of clicks, impressions, and click-through rates are heavily positively skewed, indicating that a vast majority of users, regardless of demographics, are not clicking on ads, etc, although some users click as many as 4 times. It might be worth further investigating what variables drive some users to click or engage and not others.
 
 #### Additional Questions for 231 Students
 
