@@ -1,0 +1,147 @@
+---
+title: "Lab 5"
+author: "PSTAT 134/234"
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 4
+    embed-resources: true
+    theme: simplex
+editor: visual
+---
+
+
+## Lab 5
+
+This week's lab will cover the basics (and a bit beyond) of visualizing data using both R's `ggplot2` and Python's `seaborn`. We'll use a few different datasets in the process.
+
+Note that not every plot in this lab is an example of the gold standards for data visualization. The scatterplot example, for instance, includes population density measured by the size of the points. We know that human beings are not great at comparative analysis based on areas of circles; we also know that including a third variable runs the risk of overcomplicating the plot, making it more difficult to read.
+
+The goal of this lab is to give you some basic code that you can modify, combine, and select from, using your understanding of the principles of data visualization, to ultimately create effective visuals.
+
+## Setup
+
+
+```{r}
+options(scipen=999)  # turn off scientific notation like 1e+48
+library(ggplot2)
+library(tidyverse)
+library(ggalt)
+theme_set(theme_bw())  # preset the bw theme.
+```
+
+
+### Data
+
+### Colors
+
+## Two or More Continuous Variables
+
+The plots in this section are generally used to assess the relationship, or correlation, between two or more continuous variables.
+
+### Scatterplot
+
+Probably the most frequently used plot for data analysis -- the scatterplot. The basic elements of a scatterplot are simply (1) a continuous variable on the x-axis and (2) a continuous variable on the y-axis. Some scatterplots may add a line representing a function of the y-axis variable on the x-axis variable (often linear regression, but sometimes a smooth curve). Some may also add confidence interval bars to that line.
+
+This plot uses data from US counties in the midwest to visualize the relationship between population (`poptotal`) on the y-axis and area on the x-axis. This scatterplot may be somewhat overcomplicated because it also includes information about the state each county belongs to (the color of the points) and the population density (the size of the points). It
+
+
+```{r}
+data("midwest", package = "ggplot2")
+
+gg <- ggplot(midwest, aes(x = area, y = poptotal)) + 
+  geom_point(aes(col = state, size = popdensity)) + 
+  geom_smooth(method = "loess", se = F) + 
+  xlim(c(0, 0.1)) + 
+  ylim(c(0, 500000)) + 
+  labs(subtitle = "Area vs. Population", 
+       y = "Population", 
+       x = "Area", 
+       title = "Scatterplot", 
+       caption = "Source: midwest")
+
+plot(gg)
+```
+
+
+If you want to flag certain observations to draw attention to them in particular, you can use `geom_encircle()` from the package `ggalt`. Within that function, specify a new data frame that contains only the points of interest. You can use the `size` argument to control the thickness of the line being drawn and `expand` if you want the line to pass outside the points.
+
+
+```{r}
+midwest_selection <- midwest %>% 
+  filter(poptotal > 350000 & poptotal <= 500000 & area > 0.01 & area < 0.1)
+
+gg <- ggplot(midwest, aes(x = area, y = poptotal)) + 
+  geom_point(aes(col = state, size = popdensity)) +   # draw points
+  geom_smooth(method = "loess", se = F) + 
+  xlim(c(0, 0.1)) + 
+  ylim(c(0, 500000)) +   # draw smoothing line
+  geom_encircle(aes(x = area, y = poptotal), 
+                data = midwest_selection, 
+                color = "red", 
+                size = 2, 
+                expand = 0.08) +   # encircle
+  labs(subtitle = "Area vs. Population", 
+       y = "Population", 
+       x = "Area", 
+       title = "Scatterplot + Encircle", 
+       caption = "Source: midwest")
+plot(gg)
+```
+
+
+#### Integer Data
+
+For this example, rather than making a scatterplot of the relationship between population and area, let's look at a different dataset and make a scatterplot of the variables `cty` (city mileage) and `hwy` (highway mileage) for different cars.
+
+
+```{r}
+data(mpg, package="ggplot2")
+
+gg <- ggplot(mpg, aes(cty, hwy)) + 
+  geom_point() + 
+  labs(subtitle = "City vs. Highway Mileage", 
+       y = "Highway Mileage", 
+       x = "City Mileage", 
+       title = "Scatterplot with overlapping points", 
+       caption = "Source: mpg")
+
+plot(gg)
+```
+
+
+This is a basic scatterplot. Notice something about it? Well, although there are technically 234 observations in the `mpg` dataset, this plot appears to show a much smaller number. This is because `cty` and `hwy` are integers:
+
+
+```{r}
+mpg %>% 
+  select(cty, hwy) %>% 
+  head()
+```
+
+
+So if we treat them as continuous random variables, because the observations can only take on integer values ($18$ and not, for example, $18.02$), there are many overlapping points plotted. This gives the scatterplot almost a grid-like appearance.
+
+##### Jitter
+
+One way we can deal with this is by adding some random variation, or "jitter," to the points. The `width` argument controls how much variation is added; if you increase the `width`, the points will be more spread out.
+
+
+```{r}
+gg <- ggplot(mpg, aes(cty, hwy)) + 
+  geom_jitter(width = .75) + 
+  labs(subtitle = "City vs. Highway Mileage", 
+       y = "Highway Mileage", 
+       x = "City Mileage", 
+       title = "Scatterplot with jitter", 
+       caption = "Source: mpg")
+
+plot(gg)
+```
+
+
+##### Count
+
+The other way we can handle this is by creating a "counts
+
