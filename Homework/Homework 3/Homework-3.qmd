@@ -1,0 +1,157 @@
+---
+title: "Homework 3"
+author: "PSTAT 134/234"
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 4
+    embed-resources: true
+    theme: simplex
+editor: visual
+---
+
+## Homework 3
+
+![Star Trek ships.](star_trek.jpeg)
+
+For this homework assignment, we'll be working with a dataset called [Spaceship Titanic](https://www.kaggle.com/competitions/spaceship-titanic/overview). It is a simulated dataset used for a popular Kaggle competition, intended to be similar to the very famous Titanic dataset. The premise of the Spaceship Titanic data is that it is currently the year 2912. You have received a transmission from four lightyears away, sent by the Spaceship Titanic, which was launched a month ago.
+
+The Titanic set out with about 13,000 passengers who were emigrating from our solar system to three newly habitable exoplanets. However, it collided with a spacetime anomaly hidden in a dust cloud, and as a result, although the ship remained intact, half of the passengers on board were transported to an alternate dimension. Your challenge is to predict which passengers were transported, using records recovered from the spaceship's damaged computer system.
+
+The dataset is provided in `/data`, along with a codebook describing each variable. You should read the dataset into your preferred coding language (R or Python) and familiarize yourself with each variable.
+
+We will use this dataset for the purposes of practicing our data visualization and feature engineering skills.
+
+### Exercise 1
+
+Which variables have missing values? What percentage of these variables is missing? What percentage of the overall dataset is missing?
+
+### Exercise 2
+
+Use mode imputation to fill in any missing values of `home_planet`, `cryo_sleep`, `destination`, and `vip`. Drop any observations with a missing value of `cabin` (there are too many possible values).
+
+Use median imputation to fill in any missing values of `age`. Rather than imputing with the overall mean of `age`, impute with the median age of the corresponding `vip` group. (For example, if someone who is a VIP is missing their age, replace their missing age value with the median age of all passengers who are **also** VIPs).
+
+For passengers missing any of the expenditure variables (`room_service`, `food_court`, `shopping_mall`, `spa`, or `vr_deck`), handle them in this way:
+
+-   If all their observed expenditure values are $0$, **or** if they are in cryo-sleep, replace their missing value(s) with $0$.
+
+-   For the remaining missing expenditure values, use mean imputation.
+
+### Exercise 3
+
+What are the proportions of both levels of the outcome variable, `transported`, in the training set?
+
+### Exercise 4
+
+Make proportion stacked bar charts of each of the following. Describe what patterns, if any, you observe.
+
+1.  `home_planet` and `transported`
+
+2.  `cryo_sleep` and `transported`
+
+3.  `destination` and `transported`
+
+4.  `vip` and `transported`
+
+### Exercise 5
+
+Using box plots, density curves, histograms, dot plots, or violin plots, compare the distributions of the following and describe what patterns you observe, if any.
+
+1.  `age` across levels of `transported`
+
+2.  `room_service` across levels of `transported`
+
+3.  `spa` across levels of `transported`
+
+4.  `vr_deck` across levels of `transported`
+
+### Exercise 6
+
+Make a correlogram of the continuous variables in the dataset. What do you observe?
+
+### Exercise 7
+
+Use binning to divide the feature `age` into six groups: ages 0-12, 13-17, 18-25, 26-30, 31-50, and 51+.
+
+### Exercise 8
+
+For the expenditure variables, do the following:
+
+-   Create a new feature that consists of the total expenditure across all five amenities;
+
+-   Create a binary feature to flag passengers who did not spend anything (a total expenditure of 0);
+
+-   Log-transform the total expenditure to reduce skew.
+
+### Exercise 9
+
+Using the `passenger_id` column, create a new binary-coded feature that represents whether a passenger was traveling alone or not. Make a proportion stacked bar chart of this feature and `transported`. What do you observe?
+
+### Exercise 10
+
+Using the `cabin` variable, extract:
+
+1.  Cabin deck (A, B, C, D, E, F, G, or T);
+2.  Cabin number (0 to 2000);
+3.  Cabin side (P or S).
+
+Then do the following:
+
+-   Drop any observations with a cabin deck of T;
+
+-   Bin cabin number into groups of 300 (for example, 0 - 300, 301 - 600, 601- 900, etc.).
+
+### Exercise 11
+
+Create a new data frame (or tibble) that retains the following features:
+
+1.  `home_planet`
+2.  cabin deck
+3.  cabin number (binned)
+4.  cabin side
+5.  `age` (binned)
+6.  total expenditures (log-transformed)
+7.  `cryo_sleep`
+8.  `destination`
+9.  whether the passenger was traveling alone (call this `solo`)
+
+To those features, do the following:
+
+-   One-hot encode all categorical features
+
+-   Center and scale all continuous features
+
+### Exercise 12
+
+Write up your analyses thus far in one or two paragraphs. Describe what you have learned about the passengers on the Spaceship Titanic. Describe the relationships you observed between variables. Which features do you think may be the best predictors of transported status? Why or why not?
+
+### Exercises for 234 Students
+
+#### Exercise 13
+
+Split the dataset into training and testing. Use random sampling. Make sure that $80\%$ of observations are in the training set and the remaining $20\%$ in the testing set.
+
+#### Exercise 14
+
+Using *k*-fold cross-validation with *k* of 5, tune two models:
+
+1.  A random forest;
+2.  An elastic net.
+
+#### Exercise 15
+
+Select your best **random forest** model and use it to predict your testing set. Present the following:
+
+-   Testing accuracy;
+
+-   Testing ROC curve (and area under the ROC curve);
+
+-   Confusion matrix;
+
+-   Variable importance plot.
+
+#### Exercise 16
+
+Write up your conclusions in one to two paragraphs. Answer the following: How did your models do? Are you happy with their performance? Is there another model (besides these two) that you would be interested in trying? Which features ended up being the most important in terms of predicting whether or not a passenger would be transported?

@@ -45,13 +45,13 @@ import pandas as pd
 
 The data sets we'll use for this lab are:
 
-1. `mpg`: Comes from `ggplot2`. Contains fuel economy data from 1999 to 2008 for 38 popular models of cars. 234 observations and 11 variables.
+1.  `mpg`: Comes from `ggplot2`. Contains fuel economy data from 1999 to 2008 for 38 popular models of cars. 234 observations and 11 variables.
 
-2. `midwest`: Comes from `ggplot2`. Contains demographic information for midwest counties in the US from the 2000 census. 437 observations and 28 variables.
+2.  `midwest`: Comes from `ggplot2`. Contains demographic information for midwest counties in the US from the 2000 census. 437 observations and 28 variables.
 
-3. `mtcars`: Comes from `datasets`. Contains information about fuel consumption, automobile design and performance for 32 automobiles (1973-74 models).
+3.  `mtcars`: Comes from `datasets`. Contains information about fuel consumption, automobile design and performance for 32 automobiles (1973-74 models).
 
-4. `penguins`: Comes from `palmerpenguins`. Contains size measurements for adult foraging penguins near Palmer Station, Antarctica. 344 observations and 8 variables.
+4.  `penguins`: Comes from `palmerpenguins`. Contains size measurements for adult foraging penguins near Palmer Station, Antarctica. 344 observations and 8 variables.
 
 ## One Continuous Variable
 
@@ -761,16 +761,16 @@ penguins %>%
   head()
 ```
 
-1. Create a histogram of penguin body mass in grams.
+1.  Create a histogram of penguin body mass in grams.
 
-2. Create a density curve of penguin body mass in grams.
+2.  Create a density curve of penguin body mass in grams.
 
-3. Create box plots of body mass in grams by penguin species.
+3.  Create box plots of body mass in grams by penguin species.
 
-4. Create density curves of body mass in grams by penguin species.
+4.  Create density curves of body mass in grams by penguin species.
 
-5. Create a percent stacked bar chart displaying the species of penguins on each island.
+5.  Create a percent stacked bar chart displaying the species of penguins on each island.
 
-6. Create a scatterplot with body mass on the y-axis and flipper length on the x-axis. Color-code the points by penguin species. Add marginal histograms.
+6.  Create a scatterplot with body mass on the y-axis and flipper length on the x-axis. Color-code the points by penguin species. Add marginal histograms.
 
-7. Create a correlogram of the continuous variables in the penguin dataset.
+7.  Create a correlogram of the continuous variables in the penguin dataset.
