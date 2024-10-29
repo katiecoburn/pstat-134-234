@@ -41,7 +41,7 @@ For passengers missing any of the expenditure variables (`room_service`, `food_c
 
 ### Exercise 3
 
-What are the proportions of both levels of the outcome variable, `transported`, in the training set?
+What are the proportions of both levels of the outcome variable, `transported`, in the dataset?
 
 ### Exercise 4
 
