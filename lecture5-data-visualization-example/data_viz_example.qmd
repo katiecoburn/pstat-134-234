@@ -1,0 +1,128 @@
+---
+title: "Data Viz Example"
+author: "PSTAT 134/234"
+format: html
+editor: visual
+---
+
+a dataset of 244 tips recorded by the same waiter over a few months while working at a restaurant. useful for practicing prediction problems and data visualization. comes from a book containing a collection of case studies for business statistics
+
+often used to explore things like: (1) relationship between total bill and tip amount (2) gender and smoking habits vs tip behavior (3) day of week or time of day and tipping
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+# import plotly.io as pio
+# import plotly.offline as pyo
+import plotly as pl
+# pyo.init_notebook_mode(connected=True)
+# pio.renderers.default = 'notebook'
+# pio.renderers.default = "colab"
+
+
+pd.set_option('display.max_rows', 15)
+pd.set_option('display.max_columns', 15)
+
+# Read the file into a variable spotify_data
+tip_data = pd.read_csv("data/tips.csv")
+tip_data.head()
+
+# shape of data
+tip_data.shape
+tip_data.info()
+
+# looking for NAs
+tip_data.isna().sum()
+
+# overall data summary
+tip_data.describe(include='all')
+
+# There's a fairly strong positive correlation
+# between total bill size and tip amount
+sns.scatterplot(x='total_bill', y='tip', data=tip_data)
+plt.title('Scatter Plot of Total Bill vs. Tip')
+plt.xlabel('X axis title')
+plt.ylabel('Y axis title')
+plt.show()
+plt.clf()
+
+# Amount of tips is highest on Saturdays and Sundays,
+# in that order, then Thursday, then Friday
+sns.countplot(x='day', data=tip_data)
+plt.title('Count of Tips by Day')
+plt.xlabel('X axis title')
+plt.ylabel('Y axis title')
+plt.show()
+plt.clf()
+
+# The median total bill is highest on Sundays and Saturdays,
+# in that order
+sns.boxplot(x='day', y='total_bill', data=tip_data)
+plt.title('Box Plot of Total Bill by Day')
+plt.xlabel('X axis title')
+plt.ylabel('Y axis title')
+plt.show()
+plt.clf()
+
+# Distribution of total bill amount overall
+# Most bills are somewhere between $10 and $30
+sns.kdeplot(tip_data['total_bill'], fill=True)
+plt.title('Chart title')
+plt.xlabel('X axis title')
+plt.ylabel('Y axis title')
+plt.show()
+plt.clf()
+
+# a variation on that plot, looking at the
+# distribution of TIP amount overall:
+sns.histplot(tip_data.tip, kde=True, color="pink")
+plt.title('Chart title')
+plt.xlabel('X axis title')
+plt.ylabel('Y axis title') 
+plt.show()
+print("Mean: ", tip_data["tip"].mean())
+plt.clf()
+# most tips are between 2 and 4 dollars
+
+# Correlation heatmap of continuous variables
+# Note that the default isn't ideal here -- 0.49 is darker 
+# than 0.6, giving the impression of a stronger correlation.
+# 0.68 between total bill and tip amount;
+# 0.6 between total bill and size;
+# 0.49 between size and tip amount
+tip_data_numeric = tip_data[['total_bill', 'size', 'tip']]
+correlation_matrix = tip_data_numeric.corr()
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+plt.title('Correlation Heatmap')
+plt.xlabel('X axis title')
+plt.ylabel('Y axis title') 
+plt.show()
+plt.clf()
+
+# no lunch on saturday or sunday; lunch is consistently less
+# than dinner
+# suppose we want to make a custom palette
+# https://colorhunt.co/palettes/fall
+flatui = ["#F2613F", "#0C0C0C"]
+sns.set_palette(flatui)
+sns.barplot(x = 'day',y = 'tip',hue = 'time',data = tip_data)
+plt.title('Chart title')
+plt.xlabel('X axis title')
+plt.ylabel('Y axis title') 
+# Show the plot
+plt.show()
+plt.clf()
+
+# we can make a bubble plot of the relationship
+# between total bill and tip amount, adding information
+# about the party size:
+fig = px.scatter(tip_data, x="tip", y="total_bill", size="size", color="size")
+pl.io.write_html(fig, file="plot.html", auto_open=True)
+
+# or since we technically do have three dimensions,
+# we could plot this in 3D
+fig = px.scatter_3d(tip_data, x="tip", y="total_bill", z="size", color = "size")
+pl.io.write_html(fig, file="plot.html", auto_open=True)
+```

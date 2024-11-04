@@ -1,0 +1,13 @@
+total_bill: This attribute represents the total amount of the bill paid by the customer, including the cost of the meal, taxes, and any additional charges.
+
+tip: This attribute denotes the amount of tip left by the customer.
+
+sex: This attribute indicates the gender of the customer (male or female).
+
+smoker: This attribute indicates whether the customer is a smoker or a non-smoker. It's a categorical variable with two values: "Yes" for smokers and "No" for non-smokers.
+
+day: This attribute represents the day of the week when the meal was consumed. It could be any of the four days in a week (Thursday, Friday, Saturday, Sunday).
+
+time: This attribute denotes the time of the day when the meal was consumed. It categorized into two values: "Lunch" for meals consumed during the day and "Dinner" for meals consumed in the evening.
+
+size: This attribute indicates the size of the party dining together. It represents the number of people included in the bill.

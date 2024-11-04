@@ -1,0 +1,718 @@
+---
+title: "Lab 6"
+author: "PSTAT 134/234"
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 4
+    embed-resources: true
+    theme: simplex
+    code-fold: true
+editor: visual
+---
+
+## Feature Engineering
+
+For this week's lab, we'll take a look at one of the data sets we introduce in PSTAT 131/231 -- one of the most commonly practiced with data sets on Kaggle, the Titanic data. Although we do fit some models to the Titanic data in 131/231, the feature engineering we do in that course is relatively limited. If we delve more deeply, we can potentially achieve better model performance.
+
+### Data
+
+As a reminder, the Titanic dataset comes from a Kaggle competition that is constantly running, where many data scientists practice models to hone their skills. You can find a link to the competition [here](https://www.kaggle.com/competitions/titanic). It is a binary classification problem, where the goal is to predict which passengers would survive the [Titanic shipwreck](https://en.wikipedia.org/wiki/Titanic).
+
+The following code loads the data from `data/titanic.csv`. You can familiarize yourself with the variables it contains using the codebook (`data/titanic_codebook.txt`) or with the information below.
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(corrplot)
+library(tidymodels)
+titanic <- read_csv("data/titanic.csv")
+dim(titanic)
+head(titanic)
+```
+
+```{python}
+import numpy as np
+import pandas as pd
+import re
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set(style="darkgrid")
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder, StandardScaler
+from sklearn.metrics import roc_curve, auc
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import train_test_split
+
+import string
+import warnings
+warnings.filterwarnings('ignore')
+
+titanic = r.titanic
+```
+
+There are $891$ rows and $12$ columns in the dataset. The columns are:
+
+-   `passenger_id`: Unique identifier of rows/passengers. Not likely to have any effect on the outcome;
+
+-   `survived`: The target variable, a binary variable with values `"Yes"` (passenger survived) or `"No"` (passenger did not survive);
+
+-   `pclass`: Socioeconomic status of the passenger, an ordinal feature with three values, `1` = upper class, `2` = middle class, `3` = lower class;
+
+-   `name`: Passenger's full name, last name first;
+
+-   `sex`: Passenger sex, a binary variable with values `"male"` and `"female"`;
+
+-   `age`: Passenger age in years;
+
+-   `sib_sp`: Total number of passengers' siblings and/or spouses on board;
+
+-   `parch`: Total number of passengers' parents and/or children on board;
+
+-   `ticket`: Passengers' ticket number;
+
+-   `fare`: Passengers' fare;
+
+-   `cabin`: Passengers' cabin number;
+
+-   `embarked`: Point of embarkation, a categorical feature with three values, `"C"` = Cherbourg, `"Q"` = Queenstown, `"S"` = Southampton.
+
+### Missing Data
+
+To assess the amount and pattern of missingness in R, we could run:
+
+```{r}
+library(naniar)
+vis_miss(titanic)
+```
+
+This would reveal to us that there are missing values of `age` and `cabin`. Without further investigation, we might not realize that there are also missing values of `embarked`, but there are:
+
+```{r}
+titanic$embarked %>% is.na() %>% 
+  mean()
+```
+
+In Python, we could diagnose the number and pattern of missing values:
+
+```{python}
+def display_missing(df):    
+    for col in df.columns.tolist():          
+        print('{} column missing values: {}'.format(col, df[col].isnull().sum()))
+    print('\n')
+    
+display_missing(titanic)
+```
+
+#### Age
+
+We will replace missing values of `age` with median imputation, but rather than using the overall median, we'll replace any missing values with the corresponding median of age for that level of passenger class and sex. In other words, if a first-class male passenger is missing their `age` value, we will replace their missing value with the median age of all other first-class male passengers, and so on.
+
+The reasoning behind this is based on passenger class's moderate correlation with `age` and `survived` (and because we can logically reason that passenger sex, which also has a strong relationship with survival, might be related as well). To check the correlations:
+
+```{r}
+titanic %>% 
+  select_if(is.numeric) %>% 
+  cor(use = "pairwise.complete.obs") %>% 
+  corrplot(type = "lower", method = "number")
+```
+
+To do this in R:
+
+```{r}
+titanic <- titanic %>% 
+  group_by(pclass, sex) %>% 
+  reframe(age_median = median(age, na.rm = T),
+            across(.cols = everything())) %>% 
+  mutate(age = case_when(
+    is.na(age) ~ age_median,
+    .default = age
+  )) %>% 
+  select(-age_median)
+```
+
+To do this in Python:
+
+```{python}
+age_medians = titanic.groupby(['pclass', 'sex'])['age'].transform(lambda x: x.fillna(x.median()))
+
+titanic['age'] = titanic['age'].fillna(age_medians)
+```
+
+#### Embarked
+
+Let's look at the two passengers who are missing values for the `embarked` variable:
+
+```{r}
+titanic %>% 
+  filter(is.na(embarked))
+```
+
+They were traveling together, since they shared the same cabin number and ticket number. [Googling one of their names](https://www.encyclopedia-titanica.org/titanic-survivor/martha-evelyn-stone.html) tells us that Mrs. Stone "*boarded the Titanic in Southampton on 10 April 1912 and was travelling in first class with her maid Amelie Icard. She occupied cabin B-28.*" We can then simply replace those two missing values of `embarked` with `"S"` for Southampton.
+
+```{r}
+titanic <- titanic %>% 
+  mutate(embarked = case_when(
+    is.na(embarked) ~ "S",
+    .default = embarked
+  ))
+```
+
+Or in Python:
+
+```{python}
+titanic['embarked'] = titanic['embarked'].fillna('S')
+```
+
+#### Cabin
+
+The `cabin` feature is a little bit tricky and needs further exploration. As we saw previously, about $77\%$ of passengers are missing information about the cabin in which they resided.
+
+```{r}
+titanic %>% 
+  filter(is.na(cabin))
+```
+
+We could simply drop these rows, but there is useful information in the `cabin` variable that we might want to take advantage of, if possible; the letter of `cabin` tells us what deck the cabins are located in.
+
+![](images/clipboard-1209013836.png)
+
+As deck goes from A to G, distance to the staircase increases, which may well have been a factor in survival; it would be useful to retain that information.
+
+We'll label missing values of `cabin` as `"M"` and treat them as a separate deck.
+
+```{r}
+titanic <- titanic %>%
+  mutate(deck = case_when(
+    !is.na(cabin) ~ str_extract(cabin, "([A-Z]+)"),
+    is.na(cabin) ~ "M",
+    .default = NULL)) %>% 
+  select(deck, everything())
+```
+
+To do the above in Python:
+
+```{python}
+titanic['deck'] = titanic['cabin'].apply(lambda x: re.search(r"([A-Z]+)", x).group(0) if pd.notna(x) else "M")
+```
+
+If we then create a percent stacked bar chart to look at the distribution of passenger classes across decks:
+
+```{r}
+titanic %>% 
+  ggplot(aes(x = deck, fill = factor(pclass))) +
+  geom_bar(position = "fill")
+```
+
+In Python:
+
+```{python}
+plt.figure(figsize=(8, 6))
+sns.histplot(
+    data=titanic, 
+    x='deck', 
+    hue='pclass', 
+    multiple='fill', 
+    shrink=0.8, 
+    palette="Set2"
+)
+plt.xlabel("Deck")
+plt.ylabel("Proportion")
+plt.title("Proportion of Passengers by Deck and Pclass")
+plt.show()
+```
+
+(Note that Python doesn't automatically put the levels of the `deck` variable in alphabetical order.)
+
+We can see the following:
+
+-   $100\%$ of A, B, C, and T decks are first-class passengers;
+
+-   Deck D is about $87\%$ first-class and $13\%$ second-class passengers;
+
+-   Deck E is about $83\%$ first-class, $10\%$ second-class, and $7\%$ third-class passengers;
+
+-   Deck F is about $62\%$ second-class and $38\%$ third-class passengers;
+
+-   $100\%$ of Deck G is third-class passengers;
+
+-   passengers missing cabin information are mainly second- and third-class passengers.
+
+We might then want to look at the count of observations in each of these categories, to make sure there are no categories with only a very few observations:
+
+```{r}
+titanic %>% 
+  group_by(deck) %>% 
+  count()
+```
+
+There is only one person in the data set in T-deck, and since they are a first-class passenger (and therefore more similar to A-, B-, and C-deck), we'll group them with A-deck.
+
+We'll combine A, B, and C decks together, D and E decks together, and F and G decks together. This is because their distributions of passenger classes are relatively similar, and the number of passengers in these decks is relatively low, which might make working with the individual deck membership difficult later on.
+
+We will also now drop `cabin` because we've retained the useful information from it.
+
+```{r}
+titanic <- titanic %>%
+  mutate(deck = case_when(
+    deck == "T" ~ "ABC",
+    deck == "A" | deck == "B" | deck == "C" ~ "ABC",
+    deck == "D" | deck == "E" ~ "DE",
+    deck == "F" | deck == "G" ~ "FG",
+    .default = deck)) %>% 
+  select(-cabin)
+
+titanic %>% 
+  group_by(deck) %>% 
+  count()
+```
+
+Or in Python:
+
+```{python}
+titanic['deck'] = titanic['deck'].replace({
+    'T': 'ABC',
+    'A': 'ABC', 'B': 'ABC', 'C': 'ABC',
+    'D': 'DE', 'E': 'DE',
+    'F': 'FG', 'G': 'FG'
+})
+
+# Drop the Cabin column
+titanic = titanic.drop(columns=['cabin'])
+```
+
+Now there are no missing values left:
+
+```{r}
+vis_miss(titanic)
+titanic$embarked %>% is.na() %>% 
+  mean()
+```
+
+Or in Python:
+
+```{python}
+display_missing(titanic)
+```
+
+### Initial Split
+
+Now that we've dealt with missing data, we'll split the data into training and testing:
+
+```{r}
+titanic_split <- initial_split(titanic,
+                               prop = 0.80,
+                               strata = survived)
+titanic_train <- training(titanic_split)
+titanic_test <- testing(titanic_split)
+```
+
+If we preferred to use Python, we could split the data as shown (notice that we are stratifying on the outcome variable, since we know from previous experience that it is imbalanced):
+
+```{python}
+titanic_train, titanic_test = train_test_split(titanic, test_size=0.20, stratify=titanic['survived']) 
+```
+
+### Continuous Features
+
+For each of the continuous features, we'll look at their distribution with a histogram and a density curve, broken down by level of the outcome, `survived`.
+
+#### Fare
+
+Here are both those plots for the distribution of `fare`, first in R, then in Python:
+
+```{r}
+titanic_train %>% 
+  ggplot(aes(x = fare, fill = survived)) +
+  geom_histogram(alpha = 0.3)
+
+titanic_train %>% 
+  ggplot(aes(x = fare, fill = survived)) +
+  geom_density(alpha = 0.3)
+```
+
+```{python}
+titanic_train['survived'] = titanic_train['survived'].astype('category')
+
+# Histogram plot
+plt.figure(figsize=(10, 5))
+sns.histplot(
+    data=titanic_train, 
+    x='fare', 
+    hue='survived', 
+    element='step', 
+    stat='density', 
+    common_norm=False, 
+    alpha=0.3, 
+    palette='Set1'
+)
+plt.title("Fare Distribution by Survival (Histogram)")
+plt.xlabel("Fare")
+plt.ylabel("Density")
+plt.show()
+
+# Density plot
+plt.figure(figsize=(10, 5))
+sns.kdeplot(
+    data=titanic_train, 
+    x='fare', 
+    hue='survived', 
+    fill=True, 
+    alpha=0.3, 
+    palette='Set1'
+)
+plt.title("Fare Distribution by Survival (Density Plot)")
+plt.xlabel("Fare")
+plt.ylabel("Density")
+plt.show()
+```
+
+The `fare` feature is positively skewed, and survival rates are very high on the high end. We'll divide this feature into 13 quantile-based bins. Using quantiles to create the bins will ensure that we have the same number of observations in each group. Creating bins like this does reduce the variability of the feature, but may help models like elastic net pick up on relevant places to split the features. (In practice, it's worth trying both ways and comparing the cross-validation error for each.)
+
+Here is the distribution of the binned variable, broken down by levels of the outcome:
+
+```{r}
+titanic_train <- titanic_train %>% 
+  mutate(fare_binned = factor(ntile(fare,n=13)))
+
+titanic_train %>% 
+  ggplot(aes(x = fare_binned, fill = survived)) +
+  geom_bar(position = "fill")
+```
+
+Or in Python:
+
+```{python}
+titanic_train['fare_binned'] = pd.qcut(titanic_train['fare'], q=13, labels=False) + 1
+titanic_train['fare_binned'] = titanic_train['fare_binned'].astype(str)
+
+plt.figure(figsize=(10, 6))
+sns.histplot(
+    data=titanic_train,
+    x='fare_binned',
+    hue='survived',
+    multiple='fill',
+    shrink=0.8,
+    palette='Set1'
+)
+plt.xlabel("Fare Binned (13 Quantiles)")
+plt.ylabel("Proportion")
+plt.title("Proportion of Survival by Fare Bins")
+plt.show()
+```
+
+#### Age
+
+Here are both those plots for the distribution of `age`, first in R, then in Python:
+
+```{r}
+titanic_train %>% 
+  ggplot(aes(x = age, fill = survived)) +
+  geom_histogram(alpha = 0.3)
+
+titanic_train %>% 
+  ggplot(aes(x = age, fill = survived)) +
+  geom_density(alpha = 0.3)
+```
+
+```{python}
+plt.figure(figsize=(10, 5))
+sns.histplot(
+    data=titanic_train, 
+    x='age', 
+    hue='survived', 
+    element='step', 
+    stat='density', 
+    common_norm=False, 
+    alpha=0.3, 
+    palette='Set1'
+)
+plt.title("Age Distribution by Survival (Histogram)")
+plt.xlabel("Age")
+plt.ylabel("Density")
+plt.show()
+
+# Density plot
+plt.figure(figsize=(10, 5))
+sns.kdeplot(
+    data=titanic_train, 
+    x='age', 
+    hue='survived', 
+    fill=True, 
+    alpha=0.3, 
+    palette='Set1'
+)
+plt.title("Age Distribution by Survival (Density Plot)")
+plt.xlabel("Age")
+plt.ylabel("Density")
+plt.show()
+```
+
+This variable is not really normally distributed, but it also isn't extremely skewed. We could attempt to apply a transformation to bring the distribution closer to normal, or we could leave it as is. Another option would be to bin this variable. We'll choose to leave it as is.
+
+### Categorical Features
+
+#### Family Size
+
+Let's consolidate the information from the two variables `sib_sp` and `parch` into one, creating a new variable that we'll call `family_size`. We can sum `sib_sp` and `parch`, then add one to represent the individual themselves. After doing so, looking at a bar chart reveals that there are a number of family sizes with very few observations, so it may make more sense to re-code the variable into `Alone`, `Small`, `Medium`, and `Large`, as shown below.
+
+```{r}
+titanic_train <- titanic_train %>% 
+  mutate(family_size = sib_sp + parch + 1) %>% 
+  mutate(family_size = case_when(
+    family_size == 1 ~ "Alone",
+    family_size >= 2 & family_size <= 3 ~ "Small",
+    family_size >= 4 & family_size <= 5 ~ "Medium",
+    family_size >= 6 ~ "Large"
+  ))
+
+titanic_train %>% 
+  ggplot(aes(x = family_size, fill = survived)) +
+  geom_bar(position = "fill")
+```
+
+Or in Python:
+
+```{python}
+titanic_train['family_size'] = titanic_train['sib_sp'] + titanic_train['parch'] + 1
+
+# Categorize family size
+def categorize_family_size(size):
+    if size == 1:
+        return "Alone"
+    elif 2 <= size <= 3:
+        return "Small"
+    elif 4 <= size <= 5:
+        return "Medium"
+    else:
+        return "Large"
+
+titanic_train['family_size'] = titanic_train['family_size'].apply(categorize_family_size)
+
+# Plot the bar chart
+plt.figure(figsize=(10, 6))
+sns.histplot(
+    data=titanic_train, 
+    x='family_size', 
+    hue='survived', 
+    multiple='fill', 
+    shrink=0.8, 
+    palette='Set1'
+)
+plt.xlabel("Family Size")
+plt.ylabel("Proportion")
+plt.title("Proportion of Survival by Family Size")
+plt.show()
+```
+
+Interestingly, members of large families were less likely to survive, as were passengers traveling with no family members. Members of medium and small families were more likely to survive. It may be that the bigger the family, the more likely the family had children, and children were prioritized for rescue – however, that doesn't explain the drop in survival chances for members of large families.
+
+#### Ticket Size
+
+It might seem redundant to make another feature using the information from `ticket`, but this variable may capture additional information. Not all passengers on the Titanic were traveling with family members. Many, like the example in the "missing data" section, traveled with servants or staff, who were listed on the same ticket with them but not counted as family members.
+
+Here we create a variable called `ticket_size` and look at the relationship between it and `survived`.
+
+```{r}
+titanic_train <- titanic_train %>% 
+  group_by(ticket) %>% 
+  reframe(ticket_size = factor(n()),
+            across(.cols = everything()))
+
+titanic_train %>% 
+  ggplot(aes(x = ticket_size, fill = survived)) +
+  geom_bar(position = "fill")
+```
+
+Or in Python:
+
+```{python}
+ticket_sizes = titanic_train.groupby('ticket').size().reset_index(name='ticket_size')
+
+titanic_train = titanic_train.merge(ticket_sizes, on='ticket')
+
+titanic_train['ticket_size'] = titanic_train['ticket_size'].astype('category')
+
+plt.figure(figsize=(10, 6))
+sns.histplot(
+    data=titanic_train, 
+    x='ticket_size', 
+    hue='survived', 
+    multiple='fill', 
+    shrink=0.8, 
+    palette='Set1'
+)
+plt.xlabel("Ticket Size")
+plt.ylabel("Proportion")
+plt.title("Proportion of Survival by Ticket Size")
+plt.show()
+```
+
+We can see that the largest number of passengers on the same ticket was $6$; the smallest was $1$. Interestingly, passengers in a group of 3 were most likely to survive, while those in a group of 5 were least likely.
+
+#### Title
+
+There is very likely to be some useful information in the `name` variable, although it is trickier to access.
+
+Below, we split the `name` variable into pieces at the comma, which separates the last name from first, middle, and title. All passengers have a title at the beginning, with a period following it. We can use regular expressions, as seen below, to extract the titles for each passenger. We then use `fct_lump` to combine the less common titles (with fewer than 4 passengers) together into an `"Other"` category and look at the relationship between passenger title and survival.
+
+```{r, message=FALSE, warning=FALSE}
+titanic_train <- titanic_train %>% 
+  mutate(title = (str_split(titanic_train$name, ",") %>% 
+  str_extract("[A-Za-z]+\\.") %>% 
+  str_remove("\\."))) %>% 
+  mutate(title = fct_lump(title, n = 4))
+
+titanic_train %>% 
+  ggplot(aes(y = title, fill = survived)) + geom_bar(position = "fill")
+```
+
+Or in Python:
+
+```{python}
+titanic_train['title'] = titanic_train['name'].apply(lambda x: re.search(r",\s*(.*?)(\.|$)", x).group(1) if re.search(r",\s*(.*?)(\.|$)", x) else None)
+
+title_counts = titanic_train['title'].value_counts()
+
+top_titles = title_counts.nlargest(4).index
+titanic_train['title'] = titanic_train['title'].where(titanic_train['title'].isin(top_titles), 'Other')
+
+titanic_train['title'] = titanic_train['title'].astype('category')
+
+plt.figure(figsize=(10, 6))
+sns.histplot(
+    data=titanic_train, 
+    y='title', 
+    hue='survived', 
+    multiple='fill', 
+    shrink=0.8, 
+    palette='Set1'
+)
+plt.ylabel("Title")
+plt.xlabel("Proportion")
+plt.title("Proportion of Survival by Title")
+plt.show()
+```
+
+Older men (with titles of Mr. rather than Master) were the least likely to survive, while married women (with titles of Mrs.) were the most likely.
+
+### Finalized Dataset
+
+In R, we don't need to manually dummy-code (or one-hot encode) the categorical features or transform the outcome variable, because `tidymodels` provides us with recipe steps we can use.
+
+In Python, however, we need to dummy-code the features and re-code the target ourselves. Here I provide the code to do this.
+
+We should make sure to remember to apply all the feature engineering done above to both the training and the testing set.
+
+```{r, message=FALSE, warning=FALSE}
+titanic_train <- titanic_train %>% 
+  select(-c(ticket, passenger_id, name, sib_sp,
+            parch, fare)) %>% 
+  mutate(survived = factor(survived))
+
+titanic_test <- titanic_test %>%
+  mutate(fare_binned = factor(ntile(fare,n=13))) %>% 
+  mutate(family_size = sib_sp + parch + 1) %>% 
+  mutate(family_size = case_when(
+    family_size == 1 ~ "Alone",
+    family_size >= 2 & family_size <= 3 ~ "Small",
+    family_size >= 4 & family_size <= 5 ~ "Medium",
+    family_size >= 6 ~ "Large"
+  )) %>%
+  group_by(ticket) %>% 
+  reframe(ticket_size = factor(n()),
+            across(.cols = everything())) %>% 
+  mutate(title = (str_split(titanic_test$name, ",") %>% 
+  str_extract("[A-Za-z]+\\.") %>% 
+  str_remove("\\."))) %>% 
+  mutate(title = fct_lump(title, n = 4)) %>% 
+  select(-c(ticket, passenger_id, name, sib_sp,
+            parch, fare))
+
+titanic_recipe <- recipe(survived ~ ., 
+                         data = titanic_train) %>% 
+  step_dummy(all_nominal_predictors(), one_hot = TRUE)
+
+prep(titanic_recipe) %>% 
+  bake(titanic_train)
+
+prep(titanic_recipe) %>% 
+  bake(titanic_test)
+```
+
+```{python}
+# Process the training dataset
+titanic_train = titanic_train.drop(columns=['ticket', 'passenger_id', 'name', 'sib_sp', 'parch', 'fare'])
+titanic_train['survived'] = titanic_train['survived'].astype('category')
+
+titanic_train['survived'] = titanic_train['survived'].map({'Yes': 1, 'No': 0})
+
+# Process the test dataset
+titanic_test['fare_binned'] = pd.qcut(titanic_test['fare'], q=13, labels=False) + 1
+
+titanic_test['family_size'] = titanic_test['sib_sp'] + titanic_test['parch'] + 1
+
+def categorize_family_size(size):
+    if size == 1:
+        return "Alone"
+    elif 2 <= size <= 3:
+        return "Small"
+    elif 4 <= size <= 5:
+        return "Medium"
+    else:
+        return "Large"
+
+titanic_test['family_size'] = titanic_test['family_size'].apply(categorize_family_size)
+
+ticket_sizes = titanic_test.groupby('ticket').size().reset_index(name='ticket_size')
+titanic_test = titanic_test.merge(ticket_sizes, on='ticket')
+
+titanic_test['ticket_size'] = titanic_test['ticket_size'].astype('category')
+
+titanic_test['title'] = titanic_test['name'].apply(lambda x: re.search(r",\s*(.*?)(\.|$)", x).group(1) if re.search(r",\s*(.*?)(\.|$)", x) else None)
+
+title_counts = titanic_test['title'].value_counts()
+
+top_titles = title_counts.nlargest(4).index
+titanic_test['title'] = titanic_test['title'].where(titanic_test['title'].isin(top_titles), 'Other')
+
+titanic_test['title'] = titanic_test['title'].astype('category')
+
+titanic_test = titanic_test.drop(columns=['ticket', 'passenger_id', 'name', 'sib_sp', 'parch', 'fare'])
+
+# One-hot encode categorical features for training and test sets
+titanic_train = pd.get_dummies(titanic_train, drop_first=False)
+titanic_test = pd.get_dummies(titanic_test, drop_first=False)
+
+# Align columns of training and testing data to ensure they have the same feature set
+titanic_train, titanic_test = titanic_train.align(titanic_test, join='outer', axis=1, fill_value=0)
+
+# Show final datasets
+print(titanic_train.head())
+print(titanic_test.head())
+```
+
+### Exercises
+
+-   Notice that we forgot to center and scale the continuous features. Try implementing those transformations on both the training and testing sets.
+
+```{=html}
+<!-- -->
+```
+-   Since `deck` is clearly related to `pclass`, it might make sense that we could impute the missing values of `deck` using information from `pclass`. Try imputing the missing values via KNN.
+
+```{=html}
+<!-- -->
+```
+-   After one-hot encoding, we have considerably increased the size of the dataset. One way we can approach solving this problem is to remove any variables whose variance is near zero. In Python, code to accomplish this is:
+
+    ```{python}
+    # vec = DictVectorizer(sparse=True, dtype=int)
+    # vec.fit_transform(data)
+    ```
+
+    Try applying it to the Titanic data.
+
+-   Figure out a similar recipe step in `tidymodels` and apply it to the Titanic data using R.
