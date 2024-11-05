@@ -1,0 +1,484 @@
+---
+title: "Homework 2 Solutions"
+author: "PSTAT 134/234"
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 4
+    embed-resources: true
+    theme: simplex
+editor: visual
+---
+
+## Homework 2
+
+### Part One: Analyzing the Weather
+
+In this section, you will gain more practice working with public APIs, this time using a public weather API, [WeatherAPI](https://www.weatherapi.com/). The first thing you'll need to access the API is an API key. You can sign up for a key here: <https://www.weatherapi.com/signup.aspx>
+
+#### Exercise 1
+
+Use the <http://api.weatherapi.com/v1/current.json> URL to access the API and obtain real-time weather data. Note that you will want to specify three query parameters, at least – `key`, which should be set to your individual API key, `q`, which should equal the city name of a specified location – for example `q = "Isla Vista"` – and `aqi`, which indicates whether you want to obtain air quality data (`"yes"` or `"no"`).
+
+Obtain current real-time weather data for **fifty randomly-selected cities**. I have saved a data file containing the names of fifty cities to `/data/cities.csv`. This ensures that you are all working with the same locations (although your results will still differ, depending on when you obtain the data).
+
+::: {style="color: red"}
+**Note that code can be written here or as an "answer" to Exercise 2. Both Exercise 1 and 2 go together.**
+:::
+
+```{r, message=FALSE, warning=FALSE}
+library(httr)
+library(jsonlite)
+library(kableExtra)
+library(tidyverse)
+
+cities <- read_csv("data/cities.csv")
+```
+
+#### Exercise 2
+
+Write code in R or Python (your choice) to extract and store the following data for each location:
+
+-   City name
+
+-   Country
+
+-   Whether or not it is currently daytime there
+
+-   Temperature (in Fahrenheit)
+
+-   Humidity
+
+-   Weather description (`condition` text; for example, "Mist", "Clear", etc.)
+
+-   Wind speed (in miles per hour)
+
+-   Precipitation (in millimeters)
+
+-   US EPA air quality index (ranges from $1$ to $6$, representing the 6 categories of air quality: <https://www.airnow.gov/aqi/aqi-basics/>)
+
+```{r, eval=FALSE}
+# Note: Replace "key" with your own API key to evaluate this
+# code chunk. Otherwise, it is set to `eval=FALSE`.
+
+cities_list <- NULL
+
+for(i in 1:50){
+  res = GET("http://api.weatherapi.com/v1/current.json",
+           query = list(key = "key",
+                        q = cities$names[i],
+                        aqi = "yes"))
+  
+  cityweather = fromJSON(rawToChar(res$content))
+  cities_list[[i]] = data.frame(city_name = cityweather$location$name,
+                             country = cityweather$location$country,
+                             daytime = cityweather$current$is_day,
+                             temp = cityweather$current$temp_f,
+                             humid = cityweather$current$humidity,
+                             weatherdesc = cityweather$current$condition$text,
+                             windspd = cityweather$current$wind_mph,
+                             rain = cityweather$current$precip_mm,
+                             aqi = cityweather$current$air_quality$`us-epa-index`)
+}
+
+weather_data <- do.call(rbind, cities_list)
+
+save(weather_data, file = "weather_data.Rda")
+```
+
+```{r, message=FALSE, warning=FALSE}
+load(file = "weather_data.Rda")
+weather_data %>% head()
+```
+
+::: {style="color: red"}
+**Students' answers may vary depending on when they accessed the API. I am accessing the API to write these solutions at 7:15 PM local time, UCSB, on Sunday, October 27. As long as they write and run valid code to access the API, you should not take points off if their data is different from these solutions.**
+:::
+
+#### Exercise 3
+
+Create a scatterplot of temperature vs. humidity. Add a linear regression line to the plot. What are the estimated intercept and slope values for this linear regression? Does there appear to be a significant relationship between temperature and humidity?
+
+::: {style="color: red"}
+**As described above, students' results may differ (sometimes fairly widely) depending on when they accessed the API. Grade based on whether they created the plot correctly and whether their conclusions are valid considering their results.**
+
+**Students can put temperature on the x- or y-axis, either is fine; same with humidity. The problem doesn't specify whether they should predict one with the other. However, make sure that if they put temperature on the y-axis, for example, they are also treating it as the y-variable in their linear regression.**
+:::
+
+```{r, message=FALSE, warning=FALSE}
+weather_data %>% 
+  ggplot(aes(x = humid, y = temp)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r, message=FALSE, warning=FALSE}
+lm(temp ~ humid, data = weather_data) %>% 
+  summary()
+```
+
+::: {style="color: red"}
+**In this example, there was not a statistically significant relationship between temperature and humidity,** $p > .05$**. The estimated intercept is approximately** $71.79$ **(meaning that the average predicted temperature for a humidity of** $0$ **is about** $72$ **degrees), and the estimated slope approximately** $-0.10$ **(meaning that for each one-unit increase in humidity, average temperature is predicted to decrease by** $0.10$**).**
+:::
+
+#### Exercise 4
+
+Create a bar chart of the EPA air quality index values. What does the distribution of air quality look like? Identify the location(s) with the best air quality and the worst air quality.
+
+```{r}
+weather_data %>% 
+  ggplot(aes(x = factor(aqi))) + geom_bar() +
+  xlab("EPA Air Quality Index") +
+  ylab("Count")
+```
+
+::: {style="color: red"}
+**Answers may vary, but should be accurate based on the students' obtained data. In this case, most locations have an air quality index of 2 to 3. There are about 10 locations with an AQI of 1 and is only one location with an AQI of 5. To identify those locations:**
+:::
+
+```{r}
+weather_data %>% 
+  filter(aqi < 2) %>% 
+  head(10)
+```
+
+::: {style="color: red"}
+**The above are the ten locations with an AQI of 1 (the best air quality). The below are those with an AQI of 5 (the worst):**
+:::
+
+```{r}
+weather_data %>% 
+  filter(aqi > 4)
+```
+
+#### Exercise 5
+
+Create a bar chart of the current weather description. Which conditions are the most common? Which are the least?
+
+::: {style="color: red"}
+**The question doesn't specify, so technically students do not [have]{.underline} to do this, but it would be ideal for them to take a look at the different values before plotting and do cleaning as necessary. For example, in this data, there are "Partly cloudy" and "Partly Cloudy," which should be treated as the same. Also, it might make sense to lump the three values that mention rain together into one group.**
+
+**It's also not required to order the bars by frequency, but probably is a good idea to do so because that will help us determine the most and least common at a glance.**
+:::
+
+```{r}
+weather_data %>% 
+  select(weatherdesc) %>% 
+  table()
+
+weather_data <- weather_data %>% 
+  mutate(weatherdesc = case_when(
+    weatherdesc == "Partly Cloudy" ~ "Partly cloudy",
+    weatherdesc == "Light rain shower" ~ "Some rain",
+    weatherdesc == "Moderate or heavy rain with thunder" ~ "Some rain",
+    weatherdesc == "Patchy rain nearby" ~ "Some rain",
+    .default = weatherdesc
+  ))
+
+weather_data %>% 
+  ggplot(aes(y = fct_infreq(weatherdesc))) +
+  geom_bar() +
+  xlab("Count") + 
+  ylab("Weather Description")
+```
+
+::: {style="color: red"}
+**Most locations are partly cloudy, misty, or sunny. The least common conditions are overcast and fog.**
+:::
+
+#### Exercises for 234 Students
+
+##### Exercise 6
+
+Do you think day vs. night cycles cause a significant difference in temperature? Test this hypothesis using a *t*-test.
+
+::: {style="color: red"}
+**It makes sense to assume that the temperature would differ significantly depending on whether it is daytime or nighttime. To test:**
+:::
+
+```{r}
+t.test(temp ~ daytime, 
+       data = weather_data,
+       var.equal = FALSE)
+```
+
+::: {style="color: red"}
+**If students assume the population variances are equal, they should present some evidence to support that assumption.**
+
+**There is a significant difference in temperature,** $p < .05$.
+:::
+
+##### Exercise 7
+
+Create a table of the average temperature, humidity, wind speed, and precipitation broken down by weather description.
+
+```{r}
+weather_data %>% 
+  group_by(weatherdesc) %>% 
+  summarise(Temperature = mean(temp),
+            Humidity = mean(humid),
+            Windspeed = mean(windspd),
+            Precip = mean(rain)) %>% 
+  ungroup() %>% 
+  kbl()
+```
+
+##### Exercise 8
+
+Learn how to use the forecast API (<http://api.weatherapi.com/v1/forecast.json>).
+
+Determine the chance of rain (in percentage) for Goleta, California tomorrow. *(Note that "tomorrow" may vary depending on when you do this assignment; that is fine.)*
+
+Based on the percentage you obtained, do you think it will rain in Goleta tomorrow?
+
+```{r, eval=FALSE}
+# Note: Replace "key" with your own API key to evaluate this
+# code chunk. Otherwise, it is set to `eval=FALSE`.
+
+res = GET("http://api.weatherapi.com/v1/forecast.json",
+        query = list(key = "key",
+                    q = "Goleta"))
+  
+goletaforecast <- fromJSON(rawToChar(res$content))
+
+save(goletaforecast, file = "goletaforecast.rda")
+```
+
+```{r}
+load(file = "goletaforecast.rda")
+
+percent_chance <- goletaforecast$forecast$forecastday$day$daily_chance_of_rain
+print(percent_chance)
+```
+
+::: {style="color: red"}
+**It is not likely to rain in Goleta tomorrow (currently, tomorrow is October 28th, 2024).**
+:::
+
+### Part Two: Scraping Books
+
+In this section, you'll practice your web scraping skills by experimenting with a fictional online bookstore located at <https://books.toscrape.com/>. Use the tools that we demonstrate in class to do the following, in either R or Python (your choice):
+
+#### Exercise 9
+
+Scrape the first 20 results from this site. Create a data frame (or tibble) that stores the following for each book:
+
+-   Title
+
+-   Price (excluding tax)
+
+-   Star rating
+
+-   Whether the book is in stock
+
+```{r, message=FALSE, warning=FALSE}
+library(rvest)
+library(xml2)
+library(polite)
+```
+
+```{r, eval=FALSE}
+url <- c("https://books.toscrape.com/")
+
+html <- read_html(url)
+write_html(html, file = "20books-data.html")
+```
+
+```{r}
+html <- read_html(x = "20books-data.html")
+titles <- html %>% 
+  html_elements(".product_pod") %>%
+  html_elements("h3") %>% 
+  html_elements("a") %>% 
+  html_attr("title")
+
+prices <- html %>% 
+  html_elements(".product_pod") %>% 
+  html_elements(".price_color") %>% 
+  html_text2() %>% 
+  str_remove("£") %>% 
+  as.numeric()
+
+rating <- html %>% 
+  html_elements(".product_pod") %>% 
+  html_elements(".star-rating") %>% 
+  html_attr("class") %>% 
+  str_remove("star-rating ")
+
+in_stock <- html %>% 
+  html_elements(".instock") %>% 
+  html_text2()
+
+dataset <- tibble(titles, prices, rating, in_stock)
+head(dataset)
+```
+
+#### Exercise 10
+
+Create a histogram of prices for these 20 books. What is the average price?
+
+```{r, message=FALSE, warning=FALSE}
+dataset %>% 
+  ggplot(aes(x = prices)) +
+  geom_histogram() +
+  xlab("Price") + ylab("Count")
+```
+
+```{r}
+mean(dataset$prices)
+```
+
+::: {style="color: red"}
+**The average price is about** $38.05$ **pounds sterling, or about** $\$49.28$ **in USD.**
+
+**Note that students [must]{.underline} have removed the currency symbol and turned price into a numeric variable in order to get credit for this problem.**
+:::
+
+#### Exercise 11
+
+Create a bar chart of star rating for these 20 books. Find the book(s) with the highest and lowest star ratings.
+
+```{r}
+dataset %>% 
+  mutate(rating = factor(rating, levels = c("One", "Two",
+                                          "Three", "Four",
+                                          "Five"),
+                         ordered = TRUE)) %>% 
+  ggplot(aes(x = rating)) +
+  geom_bar() +
+  xlab("Rating") +
+  ylab("Count")
+```
+
+::: {style="color: red"}
+**Students don't [have]{.underline} to reorder the variable so that it's displayed in order from one to five, but it's a good idea to do so.**
+
+**Note that most books have a one-star rating. To find the books rated one star:**
+:::
+
+```{r}
+dataset %>% 
+  filter(rating == "One")
+```
+
+::: {style="color: red"}
+**And to find those rated five stars:**
+:::
+
+```{r}
+dataset %>% 
+  filter(rating == "Five")
+```
+
+#### Exercises for 234 Students
+
+##### Exercise 12
+
+Extend your skills; instead of scraping only the first 20 books, scrape the first **two hundred books**.
+
+For each book, in addition to the information we stored previously (title, price, star rating, etc.), figure out how to extract the **category** (i.e., Travel, Mystery, Classics, etc.).
+
+::: {style="color: red"}
+**To scrape the first two hundred books, since there are 20 books per page, this will involve scraping the book URLs from pages 1 to 10. The tricky part is that you can't extract the category of each book until you "click" on the book. Approaches may vary. The following is code to extract the URLs from each page for the first 10 pages; `extract_links`** **stores a vector of the URLs for the first 200 books. I then write a function `get_books`** **to visit each of 200 books and extract their information, which is compiled in `data`** **and then written to a .csv file (so that the code doesn't need to be rerun every time I render the .qmd file).**
+
+**This will likely take a few minutes to run (which is an additional reason to write the data to a .csv file).**
+:::
+
+```{r, eval=FALSE}
+books_bow <- bow(
+  url = "https://books.toscrape.com/",
+  user_agent = "Dr Coburn",
+  force = TRUE
+)
+
+get_links <- function(page, bow = books_bow){
+  # Update session
+  session <- nod(
+    bow = books_bow,
+    path = paste0("catalogue/page-", page, ".html")
+  )
+  scraped_page <- scrape(session, content = "text/html; charset=UTF-8")
+  
+  links <- scraped_page %>% 
+    html_elements(".product_pod") %>% 
+    html_element("a") %>% 
+    html_attr("href")
+  return(links)
+}
+pages <- seq(1, 10)
+extract_links <- map(pages, get_links) %>% unlist()
+
+get_books <- function(link, bow = books_bow){
+
+  session <- nod(
+    bow = books_bow,
+    path = paste0("catalogue/", link)
+  )
+  
+  # Scrape recipe page
+  scraped_recipe <- scrape(session)
+  
+  title <- scraped_recipe %>% 
+    html_elements(".product_main") %>%
+    html_elements("h1") %>% 
+    html_text2()
+
+  price <- scraped_recipe %>% 
+    html_element(".price_color") %>% 
+    html_text2() %>% 
+    str_remove("£") %>% 
+    as.numeric()
+
+  rating <- scraped_recipe %>% 
+    html_element(".star-rating") %>% 
+    html_attr("class") %>% 
+    str_remove("star-rating ")
+
+  in_stock <- scraped_recipe %>% 
+    html_element(".instock") %>% 
+    html_text2()
+  
+  category_list <- scraped_recipe %>% 
+    html_elements(".breadcrumb") %>% 
+    html_elements("li") %>% 
+    html_elements("a") %>% 
+    html_text2()
+  category <- category_list[3]
+  
+  results <- tibble(
+    title = title,
+    price = price,
+    rating = rating,
+    in_stock = in_stock,
+    category = category
+  )
+  return(results)
+}
+
+data <- map_dfr(extract_links, get_books)
+
+write_csv(data, file = "book-scraping-data.csv")
+```
+
+```{r}
+data <- read_csv(file = "book-scraping-data.csv")
+data %>% 
+  head()
+```
+
+##### Exercise 13
+
+What is the most common category? What is the least common?
+
+```{r, message=FALSE, warning=FALSE}
+data %>% 
+  ggplot(aes(y = fct_infreq(category))) +
+  geom_bar()
+```
+
+::: {style="color: red"}
+**Note that it's not necessary to make a bar chart specifically, as long as students correctly identify the most and least common categories.**
+
+**The most common category is "Default" (which is actually considered a category, according to this fake bookstore). The least common categories are "Womens Fiction," "Politics," "Health," "Crime," "Contemporary," "Christian Fiction," "Christian," "Biography," "Autobiography," and "Art."**
+:::
