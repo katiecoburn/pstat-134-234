@@ -401,6 +401,7 @@ plt.xlabel("Fare Binned (13 Quantiles)")
 plt.ylabel("Proportion")
 plt.title("Proportion of Survival by Fare Bins")
 plt.show()
+plt.clf()
 ```
 
 #### Age
@@ -698,14 +699,12 @@ print(titanic_test.head())
 
 -   Notice that we forgot to center and scale the continuous features. Try implementing those transformations on both the training and testing sets.
 
-```{=html}
 <!-- -->
-```
+
 -   Since `deck` is clearly related to `pclass`, it might make sense that we could impute the missing values of `deck` using information from `pclass`. Try imputing the missing values via KNN.
 
-```{=html}
 <!-- -->
-```
+
 -   After one-hot encoding, we have considerably increased the size of the dataset. One way we can approach solving this problem is to remove any variables whose variance is near zero. In Python, code to accomplish this is:
 
     ```{python}
