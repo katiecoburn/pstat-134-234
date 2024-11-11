@@ -8,27 +8,754 @@ format:
     toc-depth: 4
     embed-resources: true
     theme: simplex
-    code-fold: true
+    code-fold: show
 editor: visual
+execute:
+  warning: false
+  message: false
 ---
 
-## Quarto
+## Dataset
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+For this lab, we'll work with some of the free-text essay data from the OKCupid dataset. We read in the data and a variety of useful R packages:
 
 ```{r}
-1 + 1
+library(tidyverse)
+library(tidymodels)
+library(reshape2)
+library(wordcloud)
+library(ggraph)
+library(tidytext)
+library(httr)
+library(igraph)
+library(data.table)
+library(textdata)
+library(ggplot2)
+library(ggrepel)
+library(plotly)
+library(umap)
+library(word2vec)
+library(tm)
+library(kableExtra)
+
+pacman::p_load_gh("trinker/qdapRegex")
+
+load(file = "data/okcupid.rda")
+okcupid %>% head()
 ```
 
-You can add options to executable code like this
+We'll start with the first essay, which is the general description of themselves posted on their profile page. We retain only the `essay0` column, which contains the text of that first essay, the `status` column (whether users are single, married, available, etc.), and a newly created column `id`, which indicates the row number.
+
+Although there are 50,000+ observations in the dataset, we will work with just the first 7,000 to reduce computational demand.
 
 ```{r}
-#| echo: false
-2 * 2
+okcupid$id <- seq.int(nrow(okcupid))
+okcupid_for_later <- okcupid
+okcupid <- okcupid %>% 
+  select(essay0, status, id) %>% 
+  drop_na()
+okcupid <- okcupid[1:7000,]
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+Let's look at one of the personal essays:
+
+```{r}
+okcupid$essay0[7]
+```
+
+Looks good so far. You might notice a few commonly occuring patterns in the essay text if you examine more than one of them; these are things we'll need to deal with later on.
+
+## Tokenizing
+
+Typically, one of the first steps in the transformation from natural language to feature, or any of kind of text analysis, is tokenization. Knowing what tokenization and tokens are, along with the related concept of an n-gram, is important for almost any natural language processing task.
+
+In tokenization, we take an input (a string) and a token type (a meaningful unit of text, such as a word) and split the input into pieces (tokens) that correspond to the type (Manning, Raghavan, and Schütze 2008). The below figure outlines this process:
+
+![](images/clipboard-2616742373.png){width="547"}
+
+Most commonly, the meaningful unit or type of token that we want to split text into units of is a word. However, it is difficult to clearly define what a word is, for many or even most languages. Many languages, such as Chinese, do not use white space between words at all. Even languages that do use white space, including English, often have particular examples that are ambiguous (Bender 2013). Romance languages like Italian and French use pronouns and negation words that may better be considered prefixes with a space, and English contractions like “didn’t” may more accurately be considered two words with no space.
+
+The R function `unnest_tokens` allows us to separate the text of these essays into tokens. If we apply that to the dataset, we get:
+
+```{r}
+okcupid %>% 
+  unnest_tokens(word, essay0) %>% 
+  head(n = 30) %>% 
+  kbl() %>%
+  scroll_box(width = "400px", height = "500px")
+```
+
+This is now a pretty large dataset -- over 880,000 rows! The size has increased because every row now represents a single word in a single essay. For example, row 1 is the first word in essay number 1, "well." Row 54 is the first word in essay number 3, "musician." There are 53 words in essay #1, so that single essay now takes up 53 rows, rather than one.
+
+Once we have split text into tokens, it often becomes clear that not all words carry the same amount of information, if any information at all, for a predictive modeling task. Common words that carry little (or perhaps no) meaningful information are called stop words. It is common advice and practice to remove stop words for various NLP tasks, but the task of stop word removal is more nuanced than many resources may lead you to believe.
+
+The concept of stop words has a long history, with Hans Peter Luhn credited with coining the term in 1960 (Luhn 1960). Examples of these words in English are “a,” “the,” “of,” and “didn’t.” These words are very common and typically don’t add much to the meaning of a text but instead ensure the structure of a sentence is sound.
+
+Historically, one of the main reasons for removing stop words was to decrease the computational time for text mining; it can be regarded as a dimensionality reduction of text data and was commonly-used in search engines to give better results (Huston and Croft 2010).
+
+Stop words can have different roles in a corpus (a body of text data). We generally categorize stop words into three groups: global, subject, and document stop words.
+
+Global stop words are words that are almost always low in meaning in a given language; these are words such as “of” and “and” in English that are needed to glue text together. These words are likely a safe bet for removal, but they are low in number. You can find some global stop words in pre-made stop word lists.
+
+Next up are subject-specific stop words. These words are uninformative for a given subject area. Subjects can be broad like finance and medicine or can be more specific like obituaries, health code violations, and job listings for librarians in Kansas. Words like “bath,” “bedroom,” and “entryway” are generally not considered stop words in English, but they may not provide much information for differentiating suburban house listings and could be subject stop words for certain analysis. You will likely need to manually construct such a stop word list. These kinds of stop words may improve your performance, if you have the domain expertise and time required to create a good list.
+
+Lastly, we have document-level stop words. These words do not provide any or much information for a given document. These are difficult to classify and not usually worth the trouble to identify. Even if you can find document stop words, it is not obvious how to incorporate this kind of information in a regression or classification task.
+
+We'll use a pre-made list of stop words provided by the `stopwords` R package. It comes from the SMART (System for the Mechanical Analysis and Retrieval of Text) Information Retrieval System, an information retrieval system developed at Cornell University in the 1960s. It is not domain-specific and is very general:
+
+```{r}
+data("stop_words")
+
+stop_words %>% 
+  head(n = 30) %>% 
+  kbl() %>%
+  scroll_box(width = "400px", height = "500px")
+```
+
+If you scroll through the table above, you'll get an idea of the general variety of stop words in this list.
+
+Next we use the `tidyverse` function `anti_join` to retain only those words that are not in the list of stop words, and count the most commonly occurring words after removing stop words:
+
+```{r}
+okcupid %>% 
+  unnest_tokens(word, essay0) %>% 
+  anti_join(stop_words) %>%
+  count(word, sort = TRUE) %>% 
+  head(n = 30) %>% 
+  kbl() %>%
+  scroll_box(width = "400px", height = "500px")
+```
+
+This tells us that there are HTML tags in here that we need to remove. The most commonly occuring "word," for example, is "br," which is the HTML tag for a line break, and not really a word at all. High on this list are also "words" like "href" (part of the HTML link tag) and "ilink" (another HTML term).
+
+Let's see if we can improve the quality of our tokenized data by applying some cleaning techniques.
+
+## Cleaning
+
+We can remove any words that are in a tag -- for example, `"<br />"` or `"<a href>"`. While we're at it, we might want to remove the `"\n"` and `"&"` that pop up frequently throughout. We also should probably remove symbols and numbers. We can do all that with the below code:
+
+```{r}
+# removing HTML tags, replacing with a space
+okcupid$essay0 <- str_replace_all(okcupid$essay0, pattern = "<.*?>", " ")
+# removing "\n", replacing with a space
+okcupid$essay0 <- str_replace_all(okcupid$essay0, pattern = "\n", " ")
+# removing "&amp;" and "&gt;"
+okcupid$essay0 <- str_replace_all(okcupid$essay0, pattern = "&amp;", " ")
+okcupid$essay0 <- str_replace_all(okcupid$essay0, pattern = "&gt;", " ")
+
+remove <- c('\n', 
+            '[[:punct:]]', 
+            'nbsp', 
+            '[[:digit:]]', 
+            '[[:symbol:]]',
+            '^br$',
+            'href',
+            'ilink') %>%
+  paste(collapse = '|')
+# removing any other weird characters,
+# any backslashes, adding space before capital
+# letters and removing extra whitespace,
+# replacing capital letters with lowercase letters
+okcupid$essay0 <- okcupid$essay0 %>% 
+  str_remove_all('\'') %>%
+  str_replace_all(remove, ' ') %>%
+  str_replace_all("([a-z])([A-Z])", "\\1 \\2") %>%
+  tolower() %>%
+  str_replace_all("\\s+", " ")
+```
+
+Let's look at a few essays to verify that the process worked:
+
+```{r}
+okcupid$essay0[98:100]
+```
+
+Looks good. We can certainly see some of the diversity in essay responses, just from these three examples alone. And NOW we can remove the stopwords and unnest. Notice that I also remove a specific essay here (row number 5649). Take a look at that essay and see if you can figure out why I removed it. Do you think there are probably other essays in the dataset worth removing?
+
+```{r}
+okcupid <- okcupid %>% 
+  filter(id !=5649)
+# storing this so we can compare the results
+# to n-grams, etc, later on
+okcupid2 <- okcupid
+okcupid <- okcupid %>% 
+  unnest_tokens(word, essay0) %>% 
+  anti_join(stop_words)
+```
+
+Now that we've removed stop words, we can look at the most commonly occuring words:
+
+```{r}
+okcupid %>% 
+  count(word, sort = TRUE) %>% 
+  head(n = 30) %>% 
+  kbl() %>%
+  scroll_box(width = "400px", height = "500px")
+```
+
+For the most part, these are words that you'd probably expect to appear in a self-description on a dating site; "im," "love," "life," "people," "friends," "enjoy" are all popular.
+
+### Exercises
+
+Work with `essay2`. This is the section of the OKCupid data where users describe their strengths or best attributes. Using that essay data,
+
+1.  Tokenize the data into words;
+2.  Remove stop words;
+3.  Clean the data.
+
+## Visualizations
+
+Because we’ve been using tidy tools, our word counts are stored in a tidy data frame. This allows us to pipe this directly to the ggplot2 package, for example, to create a visualization of the most common words:
+
+```{r}
+okcupid %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 650) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+```
+
+Let’s address the topic of opinion mining or sentiment analysis. When human readers approach a text, we use our understanding of the emotional intent of words to infer whether a section of text is positive or negative, or perhaps characterized by some other more nuanced emotion like surprise or disgust. We can use the tools of text mining to approach the emotional content of text programmatically.
+
+There are a variety of methods and dictionaries that exist for evaluating the opinion or emotion in text. The `tidytext` R package provides access to several sentiment lexicons. We'll use the [NRC lexicon](https://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm) here. It categorizes words in a binary fashion ("yes" or "no") into eight different groups associated with basic emotions: anger, fear, anticipation, trust, surprise, sadness, joy, and disgust.
+
+How were sentiment lexicons put together and validated? They were constructed via either crowdsourcing (using, for example, Amazon Mechanical Turk) or by the labor of one of the authors, and were validated using some combination of crowdsourcing again, restaurant or movie reviews, or Twitter data. Given this information, we may hesitate to apply these sentiment lexicons to styles of text dramatically different from what they were validated on. While it is true that using these sentiment lexicons with, for example, Jane Austen’s novels may give us less accurate results than with tweets sent by a contemporary writer, we still can measure the sentiment content for words that are shared across the lexicon and the text.
+
+It is important to keep in mind that these methods do not take into account qualifiers before a word, such as in “no good” or “not true”; a lexicon-based method like this is based on unigrams only. For many kinds of text (like the narrative examples below), there are not sustained sections of sarcasm or negated text, so this is not always an important effect.
+
+We use `get_sentiments` to load the NRC lexicon. Then we can take a look at some of the most commonly occuring words in the OKCupid essays that are labeled with a negative emotion:
+
+```{r}
+get_sentiments("nrc")
+nrc_negative <- get_sentiments("nrc") %>% 
+  filter(sentiment == "negative")
+
+okcupid %>%
+  inner_join(nrc_negative) %>%
+  count(word, sort = TRUE) %>% 
+  head(n = 30) %>% 
+  kbl() %>%
+  scroll_box(width = "400px", height = "500px")
+```
+
+Some of these make sense, and definitely have a negative emotional connotation -- words like "ill," "hate," "weird," etc. Some of them are a little odd -- "mother" and "liberal"? In addition, we probably shouldn't assume that words like "ill" are always used in a negative connotation; that word can be used as a slang term to express something positive.
+
+There are pros and cons to creating your own sentiment dictionary. Doing so might attain better predictive model performance -- depending on the dataset -- but it may also take a considerable amount of time and energy.
+
+We can implement `count` here with `word` and `sentiment` to get an idea of how much each word contributes to each sentiment. We use `slice_max` with `n = 10` to retrieve the top 10 words that contribute the most to each of the 8 sentiment categories in the NRC database. We can then pipe this directly into `ggplot` and compare:
+
+```{r}
+nrc_word_counts <- okcupid %>%
+  inner_join(get_sentiments("nrc")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup() %>% 
+  group_by(sentiment) %>%
+  slice_max(n, n = 10) %>% 
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(x = "Contribution to sentiment",
+       y = NULL)
+nrc_word_counts
+```
+
+It makes sense that, for example, "love" and "enjoy" contribute the most to the "positive" and "joy" sentiments. "Time" contributes most to "anticipation" and "laugh" to "surprise." Some of these might seem a little unusual -- for example, "music" contributes the most to "sadness."
+
+We’ve seen that this tidy text mining approach works well with ggplot2, but having our data in a tidy format is useful for other plots as well. Wordclouds are a common visualization for natural language processing. Consider the `wordcloud` package, which uses base R graphics. Let’s look at the most common words in these essays as a whole again, but this time as a wordcloud:
+
+```{r}
+okcupid %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100, scale=c(4,.5),colors=brewer.pal(8,"Dark2")))
+```
+
+This plot displays the 100 most commonly used words in varying sizes, where size of the word is proportional to its number of uses; for example, "im" is the largest word, as it is the most commonly occurring. The largest words are different colors so that they stand out even further.
+
+In other functions, such as `comparison.cloud()`, you may need to turn the data frame into a matrix with `reshape2`’s `acast()`. Let’s do the sentiment analysis to tag positive and negative words using an inner join, then find the most common positive and negative words. Here we use the Bing sentiment lexicon. Until the step where we need to send the data to `comparison.cloud()`, this can all be done with joins, piping, and `dplyr` because our data is in tidy format.
+
+```{r}
+okcupid %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("red", "blue"),
+                   max.words = 100)
+```
+
+This visual makes it clear that there are more positive-coded words in these essays than negative-coded ones (which makes sense, considering these are meant to be personal advertisements on a dating site), and that many of the positive words are adjectives presumably used to describe oneself (honest, loving, smart, intelligent, loyal, romantic, passionate, creative, etc.). Of course, we can again see some words that are potentially misclassified.
+
+It's also rather fitting that "love" is the biggest and most central word of a wordcloud based on dating profile essays.
+
+### Exercises
+
+Continue using `essay2`.
+
+4. What are the three most commonly occuring words in this essay?
+5. Create a word cloud of the most commonly occurring words.
+6. Create a word cloud broken down by positive vs. negative words.
+
+## TF-IDF
+
+A central question in text mining and natural language processing is how to quantify what a document is about. Can we do this by looking at the words that make up the document? One measure of how important a word may be is its term frequency (tf), how frequently a word occurs in a document. There are words in a document, however, that occur many times but may not be important; in English, these are probably words like “the”, “is”, “of”, and so forth. We might take the approach of adding words like these to a list of stop words and removing them before analysis, but it is possible that some of these words might be more important in some documents than others. A list of stop words is not a very sophisticated approach to adjusting term frequency for commonly used words.
+
+Another approach is to look at a term’s inverse document frequency (idf), which decreases the weight for commonly used words and increases the weight for words that are not used very much in a collection of documents. This can be combined with term frequency to calculate a term’s tf-idf (the two quantities multiplied together), the frequency of a term adjusted for how rarely it is used.
+
+The statistic tf-idf is intended to measure how important a word is to a document in a collection (or corpus) of documents, for example, to one novel in a collection of novels or to one website in a collection of websites.
+
+It is a rule-of-thumb or heuristic quantity; while it has proved useful in text mining, search engines, etc., its theoretical foundations are considered less than firm by information theory experts. The inverse document frequency for any given term is defined as
+
+$$
+idf(term)=ln(\frac{n_{documents}}{n_{documents containing term}})
+$$
+
+We can use the `bind_tf_idf` function to generate these values for the OKCupid essay data, and then look at the data:
+
+```{r}
+okcupid_tf_idf <- okcupid %>%
+  count(id, word) %>%
+  bind_tf_idf(term = word,
+              document = id,
+              n = n)
+
+okcupid_tf_idf %>% 
+  head(n = 30) %>% 
+  kbl() %>%
+  scroll_box(width = "400px", height = "500px")
+```
+
+There is one row in this dataset for each word and essay combination. `n` is the total number of times that word was used in that essay; for example, essay 1 used the word "explore" twice. The term frequency, `tf`, is the number of times a word was used in an essay divided by the total number of words in that essay. Most of these `idf`, inverse document frequency, values are relatively large. This indicates that those words occurred in a relatively small number of essays in the dataset (are less common words), and therefore their `tf_idf` is larger as well.
+
+We could look at those words with the largest tf-idf values:
+
+```{r}
+okcupid_tf_idf %>%
+  arrange(desc(tf_idf)) %>% 
+  head(n = 30) %>% 
+  kbl() %>%
+  scroll_box(width = "400px", height = "500px")
+```
+
+This actually reveals something interesting in the data. Take a look at "synesthesia," for example, from essay number 2189. That essay is below:
+
+```{r}
+okcupid_for_later$essay0[2189]
+```
+
+Yeah, they literally did just write the word "synesthesia" 12 times. That's why the `tf` (term frequency) for that word is so large (a term frequency of 1 means that that word is basically the only word in the document). Its tf-idf is very large because it probably only appears in one essay, and it appears in that essay no less than 12 times. Many of the other examples here with very large tf-idf are also one-word essays (with a tf of 1) -- "frinedly," for example, or the inexplicable "chinchilla." It might be worth removing these essays from the database if we were going to spend more time working with this data.
+
+We can create a visualization of the top 15 words with the largest tf-idf for the first four essays in the dataset as follows:
+
+```{r}
+okcupid_tf_idf %>%
+  filter(id <= 5) %>%
+  group_by(id) %>%
+  slice_max(tf_idf, n = 15) %>%
+  ungroup() %>%
+  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = id)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~id, ncol = 2, scales = "free") +
+  labs(x = "tf-idf", y = NULL)
+```
+
+When doing natural language processing, if your goal is simply to turn free text into numeric features that you can then use for supervised learning, you can stop here if you choose. We have successfully taken these free text essays and transformed them into numbers. We could take our `okcupid_tf_idf` data frame and use `pivot_wider` to turn each word into a column; we could then use the words' tf-idf values as features in our model.
+
+However, it's worth noting that this may not yield the best performance, comparatively speaking. There are other ways we can turn text into numeric features that might improve predictive power. We'll talk about two of those examples later on. To get there, it's also worth introducing the concept of n-grams, another form of tokenization.
+
+### Exercises
+
+Continue working with `essay2`. 
+
+7. Find the 30 words with the largest tf-idf values.
+
+## Bigrams (or n-grams)
+
+So far we’ve considered words as individual units, and considered their relationships to sentiments or to documents. However, many interesting text analyses are based on the relationships between words, whether examining which words tend to follow others immediately, or that tend to co-occur within the same documents.
+
+We'll explore some of the methods tidytext offers for calculating and visualizing relationships between words in your text dataset. This includes the `token = "ngrams"` argument, which tokenizes by pairs of adjacent words rather than by individual ones. We’ll also introduce a new package: `ggraph`, which extends `ggplot2` to construct network plots. Together these expand our toolbox for exploring text within the tidy data framework.
+
+We’ve been using the `unnest_tokens` function to tokenize by word, which is useful for the kinds of sentiment and frequency analyses we’ve been doing so far. But we can also use the function to tokenize into consecutive sequences of words, called n-grams. By seeing how often word $X$ is followed by word $Y$, we can then build a model of the relationships between them.
+
+We do this by adding the `token = "ngrams"` option to `unnest_tokens()`, and setting `n` to the number of words we wish to capture in each n-gram. When we set `n` to $2$, we are examining pairs of two consecutive words, often called “bigrams”.
+
+Notice that we divide the bigrams into two at one point in the below code, and then unite them again. This is done so that we can filter out stop words in the bigram overall.
+
+```{r}
+okcupid_bigrams <- okcupid2 %>% 
+  unnest_tokens(bigram, essay0, token = "ngrams", n = 2) %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+okcupid_bigrams <- okcupid_bigrams %>% 
+  unite(bigram, word1, word2, sep = " ")
+```
+
+We can then look at the most commonly occuring bigrams (pairs of two words):
+
+```{r}
+okcupid_bigrams %>%
+  count(bigram, sort = TRUE) %>% 
+  head(n = 30) %>% 
+  kbl() %>%
+  scroll_box(width = "400px", height = "500px")
+```
+
+We can see that the most common bigram (overwhelmingly so) is "san francisco." If we hadn't guessed already, this would probably tell us that the data we're working with comes from OKCupid profiles in California. We also see bigrams like "im pretty" (which could mean the user is calling themselves attractive, but could also be a modifier in sentences like "im pretty smart", etc) and "ive lived". A lot of users also mention video games and "love music."
+
+A bigram can also be treated as a term in a document in the same way that we treated individual words. For example, we can look at the tf-idf of bigrams across OKCupid essays. These tf-idf values can be visualized within each book, just as we did for words. Here are the bigrams with the largest tf-idf values:
+
+```{r}
+okcupid_bigrams %>%
+  count(id, bigram) %>% 
+  bind_tf_idf(bigram, id, n) %>%
+  arrange(desc(tf_idf)) %>% 
+  head(n = 30) %>% 
+  kbl() %>%
+  scroll_box(width = "400px", height = "500px")
+```
+
+Again, these are primarily bigrams with a term frequency of 1, meaning they are the only occurring term in that essay. This seems a little odd; take "word words," for example, which might make you worry that the code wasn't working. But if we look at essay number 580, we see:
+
+```{r}
+okcupid_for_later$essay0[580]
+okcupid %>% 
+  filter(id == 580)
+```
+
+The problem is that "in" and "a" are both stop words, so they were removed, and the punctuation of a colon was removed, leaving behind the single nonsensical bigram, "word words."
+
+We can look at the bigrams within each essay with the largest tf-idf values. Let's consider 4 of the essays (17, 18, 19, and 20), pull out their top bigrams, and create a visualization:
+
+```{r}
+okcupid_bigrams %>%
+  count(id, bigram) %>%
+  bind_tf_idf(bigram, id, n) %>%
+  arrange(desc(tf_idf)) %>% 
+  filter(id >=16 & id <= 20) %>% 
+  group_by(factor(id)) %>%
+  slice_max(tf_idf, n = 5) %>%
+  ungroup() %>%
+  ggplot(aes(tf_idf, fct_reorder(bigram, tf_idf), fill = id)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~id, ncol = 2, scales = "free") +
+  labs(x = "tf-idf", y = NULL)
+```
+
+Dating site essays definitely have some quirks. There are a number of bigrams with fairly high tf-idf values; many words are used in only a very few essays (which may partially be due to people trying to make themselves as unique and unusual/interesting as possible; food for thought). Essay number 20 is a nice variation because it features four bigrams of relatively differing tf-idf values; some bigrams, like "free time," clearly appear in quite a few essays, while others, like "medical assisting," do not.
+
+We may be interested in visualizing all of the relationships among words simultaneously, rather than just the top few at a time. As one common visualization, we can arrange the words into a network, or “graph.” Here we’ll be referring to a “graph” not in the sense of a visualization, but as a combination of connected nodes. A graph can be constructed from a tidy object since it has three variables:
+
+-   from: the node an edge is coming from
+-   to: the node an edge is going towards
+-   weight: a numeric value associated with each edge
+
+The `igraph` package has many powerful functions for manipulating and analyzing networks. One way to create an `igraph` object from tidy data is the `graph_from_data_frame()` function, which takes a data frame of edges with columns for “from”, “to”, and edge attributes (in this case `n`):
+
+```{r}
+okcupid_bigrams_sep <- okcupid2 %>% 
+  unnest_tokens(bigram, essay0, token = "ngrams", n = 2) %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+# filter for relatively common bigrams
+bigram_graph <- okcupid_bigrams_sep %>%
+  count(word1, word2) %>% filter(n > 50) %>% 
+  graph_from_data_frame()
+```
+
+`igraph` has plotting functions built in, but they’re not what the package is designed to do, so many other packages have developed visualization methods for graph objects. I recommend the `ggraph` package (Pedersen 2017), because it implements these visualizations in terms of the grammar of graphics, which we are already familiar with from `ggplot2`.
+
+We can convert an `igraph` object into a `ggraph` with the `ggraph` function, after which we add layers to it, much like layers are added in `ggplot2`. For example, for a basic graph we need to add three layers: nodes, edges, and text.
+
+```{r}
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link() +
+  geom_node_point() +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+```
+
+From this, we can visualize some details of the text structure. We can see several triplets of nodes that represent common short phrases -- "san francisco" and "san diego," for example, or "southern california" and "northern california." We can tell that "east" commonly appears with "bay" (as in "east bay") and with "coast" (as in "east coast"). Some centers of bigger clusters are words like "Im," which goes with "pretty," "easy," "originally," etc., and "time," which goes with "spending," and "free," for example.
+
+Here we conclude with a few polishing operations to make a better looking graph:
+
+-   We add the edge_alpha aesthetic to the link layer to make links transparent based on how common or rare the bigram is;
+-   We add directionality with an arrow, constructed using `grid::arrow()`, including an `end_cap` option that tells the arrow to end before touching the node;
+-   We tinker with the options to the node layer to make the nodes more attractive (larger, blue points); We add a theme that’s useful for plotting networks, `theme_void()`.
+
+```{r}
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+```
+
+This adds several quality of life improvements to the network visualization. Directionality is helpful in interpretation; for example, we now would know that the common bigram was "recently moved," not "moved recently," or "hip hop" instead of "hop hip." The element of bigram rarity is also nice; you can see that "san francisco" is much more common than "san diego," for example. (This is probably a dataset primarily collected from northern California/the Bay Area.)
+
+The following code goes on to reshape the data so that each column represents the tf-idf values for a single bigram (with the value $0$ if that bigram did not appear in that specific document). We use `left_join` to merge this dataset, containing bigrams' tf-idf values, with our original OKCupid dataset. You could now use this dataset in any type of predictive modeling, predicting `status` (the outcome variable) with information from the free-text essay in addition to our other variables of interest.
+
+```{r}
+okc_data <- okcupid_bigrams %>%
+  count(id, bigram) %>%
+  bind_tf_idf(bigram, id, n) %>%  
+  filter(bigram != "NA NA") %>% 
+  group_by(bigram) %>% 
+  reframe(counts = n(), across(everything())) %>% 
+  filter(counts > 5) %>% 
+  left_join(okcupid_for_later) %>% 
+  pivot_wider(id_cols = id, 
+             names_from = bigram,
+            values_from = tf_idf,
+             values_fill = 0)
+dim(okc_data)
+```
+
+It's worth noting that the dimensionality of the data has dramatically increased, of course. We now have 1,433 feature variables. Bear in mind that there is likely to be a considerable amount of scarcity -- feature variables with a near-zero variance -- so it would be useful to include `step_zv()` or `step_nzv()` in your `tidymodels` recipe.
+
+Not all text data has this much of a scarcity problem; again, dating site essays are a little unique, in that many people's goal with writing them is to be individualistic and stand out as much as possible.
+
+### Exercises
+
+Continue working with `essay2`. 
+
+8. Find the 30 most commonly occurring bigrams.
+9. Find the bigrams with the largest tf-idf values.
+10. Create a graph visualizing the network of bigrams.
+
+## Word Embeddings
+
+Suppose that you don't want to stop at tf-idf, however. Suppose that you are interested in a more complicated but potentially better way of extracting numeric information from text data. The good (and bad) news is that there are many ways of doing so, and many different techniques that you can use for creating word embeddings beyond tf-idf. We'll discuss two of the possibilities below.
+
+### Bag of Words
+
+"Bag of words" (BoW) is a simple and commonly used text representation method in natural language processing (NLP) and information retrieval. In the BoW model, a text is represented as an unordered collection (or "bag") of its words, disregarding grammar, syntax, and word order. Here’s how it works:
+
+-   Text tokenization: The text is split into individual words (tokens);
+
+-   Vocabulary creation: A vocabulary list is created, containing each unique word from the entire set of documents;
+
+-   Vector representation: Each document is represented by a vector, where each position corresponds to a word in the vocabulary. The value in each position indicates the word’s frequency in the document.
+
+For example, consider two sentences, "The cat meowed," and "The dog barked at the cat." The representation using BoW would consist of a vocabulary list, `["the", "cat", "meowed", "dog", "barked", "at"]`, and two vectors, one per sentence. The vector for sentence one would be `[1, 1, 1, 0, 0, 0]`; it contains only the first three words. The vector for sentence two would be `[2, 1, 0, 1, 1, 1]`; it doesn't contain the word "meowed," and it contains the word "the" twice.
+
+The main limitation of BoW is that it ignores context, making it less effective for capturing word meaning compared to more advanced techniques. However, it remains a simple and efficient baseline model for text analysis.
+
+In the below code, we read in the OKCupid data again, and again apply our pre-processing from before. Note that this time we work with a different essay, `essay9`. This essay describes what users on the dating site are looking for in a romantic partner.
+
+```{r}
+load(file = "data/okcupid.rda")
+okcupid %>% head()
+okcupid$id <- seq.int(nrow(okcupid))
+okcupid <- okcupid %>% 
+  select(id, essay9, status) %>% 
+  mutate(status = case_when(
+    status == "available" ~ "single",
+    status == "seeing someone" ~ "taken",
+    status == "married" ~ "taken",
+    status == "single" ~ "single",
+    .default = status
+  )) %>% 
+  drop_na()
+okcupid <- okcupid[1:3000,]
+
+okcupid$essay9 <- str_replace_all(okcupid$essay9, pattern = "<.*?>", " ")
+# removing "\n", replacing with a space
+okcupid$essay9 <- str_replace_all(okcupid$essay9, pattern = "\n", " ")
+# removing "&amp;" and "&gt;"
+okcupid$essay9 <- str_replace_all(okcupid$essay9, pattern = "&amp;", " ")
+okcupid$essay9 <- str_replace_all(okcupid$essay9, pattern = "&gt;", " ")
+
+remove <- c('\n', 
+            '[[:punct:]]', 
+            'nbsp', 
+            '[[:digit:]]', 
+            '[[:symbol:]]',
+            '^br$',
+            'href',
+            'ilink') %>%
+  paste(collapse = '|')
+# removing any other weird characters,
+# any backslashes, adding space before capital
+# letters and removing extra whitespace,
+# replacing capital letters with lowercase letters
+okcupid$essay9 <- okcupid$essay9 %>% 
+  str_remove_all('\'') %>%
+  str_replace_all(remove, ' ') %>%
+  str_replace_all("([a-z])([A-Z])", "\\1 \\2") %>%
+  tolower() %>%
+  str_replace_all("\\s+", " ")
+```
+
+We use the `tf` and `data.table` R packages for this section. The below code creates a "corpus" of our OKCupid essay data using the `tf` functions `Corpus` and `VectorSource` (because the source of our text data here is the vector named "essay9" in the 'okcupid' data frame):
+
+```{r}
+corpus <- Corpus(VectorSource(okcupid$essay9))
+corpus
+```
+
+It confirms that there are $3,000$ documents in this corpus (or $3,000$ essays). We've retained a smaller subset of the data to reduce computation demand.
+
+It's not really necessary to convert our outcome variable ('status') to values of 0 and 1, especially since we'd go on to then use `tidymodels` for machine learning, which would require our converting it back to a factor -- but we convert it below just to demonstrate:
+
+```{r}
+labels <- as.numeric(factor(okcupid$status, levels = c("single", "taken")))
+labels <- labels - 1 # so that the levels are 0 and 1, not 1 and 2
+```
+
+The `tm` package then has a variety of useful tools for processing text; the below code removes stop words (again from the SMART dictionary) and strips any remaining/excess white space from the text:
+
+```{r}
+corpus <- tm_map(corpus, removeWords, stopwords("SMART"))
+corpus <- tm_map(corpus, stripWhitespace)
+```
+
+We then create a document-term matrix. This is essentially a very large frequency table, with one row per document and one column per word or token, where the values represent the counts of each word in each document:
+
+```{r}
+dtm <- DocumentTermMatrix(corpus)
+dtm_matrix <- as.matrix(dtm)
+
+dtm_matrix[1:5,1:12]
+```
+
+We can verify that this is working. Does the first document really contain all those words ("bar," "bugging," "cat," "comma")?
+
+```{r}
+okcupid$essay9[1]
+```
+
+Yes it does. We can add the labels (our output variable) back to the matrix of features:
+
+```{r}
+dtm_df <- as.data.table(dtm_matrix)
+dtm_df$label <- labels
+```
+
+Let's try fitting and tuning a model using the Bag of Words embedding.
+
+Below I fit and tune a lasso regression model. Notice the code chunk is set not to evaluate; this is because it would take a few minutes to run each time the document was rendered. Try evaluating the code chunk and assessing model performance. How did it do?
+
+```{r, eval=FALSE}
+dtm_df <- dtm_df %>% 
+  mutate(label = factor(label))
+okcupid_split <- initial_split(dtm_df, strata = label)
+
+okcupid_train <- training(okcupid_split)
+okcupid_test <- testing(okcupid_split)
+okcupid_folds <- vfold_cv(okcupid_train, v = 5, strata = label)
+
+okcupid_recipe <- recipe(label ~ ., data = okcupid_train) %>% 
+  step_zv(all_predictors())
+
+prep(okcupid_recipe) %>% bake(okcupid_train) %>% 
+  head()
+
+lasso_reg <- logistic_reg(penalty = tune(), mixture = tune()) %>% 
+  set_mode("classification") %>% 
+  set_engine("glmnet")
+lasso_grid <- grid_regular(penalty(), mixture(), levels = 5)
+lasso_wkflow <- workflow() %>% 
+  add_model(lasso_reg) %>% 
+  add_recipe(okcupid_recipe)
+
+lasso_tune <- tune_grid(lasso_wkflow, okcupid_folds)
+
+show_best(lasso_tune, metric = "accuracy")
+```
+
+### Word2Vec
+
+Word2Vec is a neural network-based method for learning word embeddings, which are dense vector representations of words that capture their meanings based on the contexts in which they appear. Its underlying assumption is that words sharing a similar context are likely to also share a similar meaning and, consequently, should ideally share a similar vector representation. Developed by researchers at Google, Word2Vec aims to create a high-dimensional space where words with similar meanings have similar vector representations. This allows semantic relationships and analogies to be captured (e.g., `"king" - "man" + "woman" ≈ "queen"`).
+
+Word2Vec can be used for a number of reasons; it can determine the relationship(s) between words in a given dataset or compute the similarity between them (e.g., cosine similarity), or its vector representations of words can be used as features for other applications like text classification or clustering.
+
+Word2Vec uses two main architectures:
+
+1.  Continuous Bag of Words (CBOW): Predicts a target word based on its surrounding context words. Given a set of context words, CBOW aims to predict the probability of a particular word in that position. This setup allows it to learn relationships between a word and its neighbors.
+
+To understand better how using this algorithm works, consider the sentence "Today is a rainy day." The model will break this sentence into word pairs of "context" and "target" words, using the specified window size. For a window size of 2, the word pairs for this sentence would be `([today, a], is), ([is, rainy], a), ([a, day], rainy)`:
+
+![](images/clipboard-4159324846.png)
+
+The input layer for the corresponding neural network will be formed with the number of context words and the window size.
+
+2.  Skip-Gram: Predicts context words given a target word. Skip-Gram tries to predict the surrounding words for a given target word, focusing on learning from sparse, distant word pairs. It’s especially effective for larger datasets, capturing nuances in meaning even in words that don’t co-occur often.
+
+These two algorithms are essentially mirror images of each other. CBOW tends to be faster because it involves predicting a single word from a fixed window size of context words; it can take hours to train in comparison to skip-gram, which can take days (depending on the amount of data you have, of course). They are both unsupervised methods that learn from unlabeled data.
+
+We'll use the skip-gram algorithm. The `word2vec` R package implements this model for us. We can specify `type = "skip-gram"` to use the skip-gram algorithm. `hs` indicates whether to use hierarchical softmax or negative sampling. `dim` refers to the dimensionality of the word vector (usually, but not always, a larger number is better). `sample` refers to the threshold for subsampling of frequent words, which can improve both accuracy and speed for large data sets. Finally, `iter` refers to the number of training iterations.
+
+```{r}
+set.seed(3435)
+sgram_model = word2vec(x = okcupid$essay9, type = "skip-gram", 
+                      hs = FALSE, dim = 50, iter = 10,
+                      sample = 0.3)
+```
+
+Once the model is fit, we can then ask it to identify the nearest neighbors (by cosine similarity) for specific words. Note that whatever words we ask it for must be in the dictionary -- that is, we can't ask for any words that aren't observed in the dataset.
+
+Let's try "love" and "like":
+
+```{r}
+sgram_lookslike <- predict(sgram_model, c("love", "like"), type = "nearest", top_n = 5)
+print("The nearest words for like and love in skip-gram model prediction are as follows:")
+print(sgram_lookslike)
+```
+
+The most similar word to "love" is "like"; the most similar word to "like" is "love," with "enjoy" a close second. This makes sense. "Want" is also a similar word to "like." People also must commonly look for others who love Jesus, animals, and nature.
+
+Let's try two other words that might occur in dating profile essays -- "communication" and "strong."
+
+```{r}
+sgram_lookslike <- predict(sgram_model, c("communication", "strong"), type = "nearest", top_n = 5)
+print("The nearest words for communication and strong in skip-gram model prediction are as follows:")
+print(sgram_lookslike)
+```
+
+Interesting. Some of these make more sense than others. You could try out different arguments for `word2vec` and see if you can customise the neural network to get even better results.
+
+It also might be interesting to try and visualize these results. We can use the `umap` function. Because the visualization will be fairly complicated (there is a large number of words in the dictionary), we'll use `plot_ly` so the visual will be interactive.
+
+```{r}
+# getting the list of possible words from our corpus from earlier
+word_list <- colnames(dtm_matrix)
+
+sgram_embedding <- as.matrix(sgram_model)
+sgram_embedding <- predict(sgram_model, word_list, type = "embedding")
+sgram_embedding <- na.omit(sgram_embedding)
+
+visualization <- umap(sgram_embedding, n_neighbors = 15, n_threads = 2)
+
+df  <- data.frame(word = rownames(sgram_embedding), 
+                  xpos = gsub(".+//", "", rownames(sgram_embedding)), 
+                  x = visualization$layout[, 1], 
+                  y = visualization$layout[, 2], 
+                  stringsAsFactors = FALSE)
+
+plot_ly(df, x = ~x, y = ~y, type = "scatter", mode = 'text', text = ~word) %>%
+  layout(title = "Skip-Gram Embeddings Visualization")
+```
+
+Words that are near each other in the feature space are considered more similar to each other.
+
+You could then go on and use these word embeddings as predictors in supervised learning, just like we did earlier with bag of words.
+
+## References
+
+[Text Mining with R: A Tidy Approach](https://www.tidytextmining.com/)
+
+[Supervised Machine Learning for Text Analysis in R](https://smltar.com/)
+
+[Chs. 14 and 15 (Strings and Regular Expressions)](https://r4ds.hadley.nz/strings) in R for Data Science (2e)
+
+[Text Mining in R with `tidytext`](https://paldhous.github.io/NICAR/2019/r-text-analysis.html)
+
+[Word2Vec using R](https://www.geeksforgeeks.org/word2vec-using-r/)
