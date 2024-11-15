@@ -1,0 +1,179 @@
+---
+title: "NLP Example"
+author: "PSTAT 134/234"
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 4
+    embed-resources: true
+    theme: simplex
+    code-fold: show
+editor: visual
+execute:
+  warning: false
+  message: false
+---
+
+We load relevant libraries and read in the data:
+
+```{r}
+library(tidymodels)
+library(tidyverse)
+library(janitor)
+library(reshape2)
+library(wordcloud)
+library(ggraph)
+library(tidytext)
+library(httr)
+library(igraph)
+library(data.table)
+library(textdata)
+library(ggplot2)
+library(ggrepel)
+library(plotly)
+library(umap)
+library(word2vec)
+library(tm)
+
+email_data <- read_csv("data/email.csv") %>%
+  clean_names()
+email_data$id <- seq.int(nrow(email_data))
+
+# removing HTML tags, replacing with a space
+email_data$message <- str_replace_all(email_data$message, pattern = "<.*?>", " ")
+# removing "\n", replacing with a space
+email_data$message <- str_replace_all(email_data$message, pattern = "\n", " ")
+# removing "&amp;" and "&gt;"
+email_data$message <- str_replace_all(email_data$message, pattern = "&amp;", " ")
+email_data$message <- str_replace_all(email_data$message, pattern = "&gt;", " ")
+
+remove <- c('\n', 
+            '[[:punct:]]', 
+            'nbsp', 
+            '[[:digit:]]', 
+            '[[:symbol:]]',
+            '^br$',
+            'href',
+            'ilink') %>%
+  paste(collapse = '|')
+# removing any other weird characters,
+# any backslashes, adding space before capital
+# letters and removing extra whitespace,
+# replacing capital letters with lowercase letters
+email_data$message <- email_data$message %>% 
+  str_remove_all('\'') %>%
+  str_replace_all(remove, ' ') %>%
+  str_replace_all("([a-z])([A-Z])", "\\1 \\2") %>%
+  tolower() %>%
+  str_replace_all("\\s+", " ")
+email_data$message[5:10]
+email_data_for_later <- email_data
+
+data("stop_words")
+
+email_data <- email_data %>% 
+  unnest_tokens(word, message) %>% 
+  anti_join(stop_words)
+
+email_data %>% 
+  count(word, sort = TRUE)
+
+email_data %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 150) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+
+email_data %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("red", "blue"),
+                   max.words = 100)
+
+email_tf_idf <- email_data %>%
+  count(id, word) %>%
+  bind_tf_idf(term = word,
+              document = id,
+              n = n)
+
+email_tf_idf %>%
+  arrange(desc(tf_idf)) 
+
+email_bigrams <- email_data_for_later %>% 
+  unnest_tokens(bigram, message, token = "ngrams", n = 2) %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+email_bigrams <- email_bigrams %>% 
+  unite(bigram, word1, word2, sep = " ")
+
+email_bigrams %>%
+  count(bigram, sort = TRUE) 
+
+email_bigrams %>%
+  count(id, bigram) %>% 
+  bind_tf_idf(bigram, id, n) %>%
+  arrange(desc(tf_idf)) 
+
+bigram_graph <- email_data_for_later %>% 
+  unnest_tokens(bigram, message, token = "ngrams", n = 2) %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>%
+  count(word1, word2) %>% filter(n > 12) %>% 
+  graph_from_data_frame()
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+
+email_data_for_later <- email_data_for_later %>% 
+  filter(category %in% c("ham", "spam"))
+corpus <- Corpus(VectorSource(email_data_for_later$message))
+corpus
+corpus <- tm_map(corpus, removeWords, stopwords("SMART"))
+corpus <- tm_map(corpus, stripWhitespace)
+labels <- as.numeric(factor(email_data_for_later$category, levels = c("ham", "spam")))
+labels <- labels - 1 # so that the levels are 0 and 1, not 1 and 2
+
+dtm <- DocumentTermMatrix(corpus)
+dtm_matrix <- as.matrix(dtm)
+
+dtm_matrix[1:5,1:12]
+dtm_df <- as.data.table(dtm_matrix)
+dtm_df$label <- labels
+
+dtm_df <- dtm_df %>%
+  mutate(label = factor(label))
+email_split <- initial_split(dtm_df, strata = label)
+
+email_train <- training(email_split)
+email_test <- testing(email_split)
+email_folds <- vfold_cv(email_train, v = 5, strata = label)
+
+email_recipe <- recipe(label ~ ., data = email_train) %>% 
+  step_zv(all_predictors())
+
+prep(email_recipe) %>% bake(email_train) %>% select(label, everything()) %>% summary()
+
+svmlin <- svm_linear(mode = "classification", cost = 1, margin = 0.1) %>% 
+  set_engine("kernlab")
+svmlin_wkflow <- workflow() %>% 
+  add_model(svmlin) %>% 
+  add_recipe(email_recipe)
+
+svmlin_fit <- fit_resamples(svmlin_wkflow, email_folds)
+
+show_best(svmlin_fit, metric = "roc_auc")
+```
+
