@@ -45,11 +45,11 @@ Take a random sample of $10,000$ reviews, stratified by `label`. All further exe
 
 #### Exercise 3
 
+Clean the reviews. Remove punctuation and convert the letters to lowercase.
+
 Tokenize the reviews into words.
 
 Remove stop words. (You can use any pre-made list of stop words of your choice.)
-
-Clean the reviews. Remove punctuation and convert the letters to lowercase.
 
 Verify that this process worked correctly.
 

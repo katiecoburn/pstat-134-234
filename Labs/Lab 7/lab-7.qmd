@@ -294,9 +294,9 @@ It's also rather fitting that "love" is the biggest and most central word of a w
 
 Continue using `essay2`.
 
-4. What are the three most commonly occuring words in this essay?
-5. Create a word cloud of the most commonly occurring words.
-6. Create a word cloud broken down by positive vs. negative words.
+4.  What are the three most commonly occuring words in this essay?
+5.  Create a word cloud of the most commonly occurring words.
+6.  Create a word cloud broken down by positive vs. negative words.
 
 ## TF-IDF
 
@@ -367,9 +367,9 @@ However, it's worth noting that this may not yield the best performance, compara
 
 ### Exercises
 
-Continue working with `essay2`. 
+Continue working with `essay2`.
 
-7. Find the 30 words with the largest tf-idf values.
+7.  Find the 30 words with the largest tf-idf values.
 
 ## Bigrams (or n-grams)
 
@@ -524,10 +524,10 @@ Not all text data has this much of a scarcity problem; again, dating site essays
 
 ### Exercises
 
-Continue working with `essay2`. 
+Continue working with `essay2`.
 
-8. Find the 30 most commonly occurring bigrams.
-9. Find the bigrams with the largest tf-idf values.
+8.  Find the 30 most commonly occurring bigrams.
+9.  Find the bigrams with the largest tf-idf values.
 10. Create a graph visualizing the network of bigrams.
 
 ## Word Embeddings
